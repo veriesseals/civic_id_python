@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # civic_id_python/Django_version
+=======
+# civic_id_python/django_version1
+>>>>>>> 9c0b2f1 (Updated readme)
 
 🇺🇸 CivicID — National Identity & Verification System (Django Build)
 
