@@ -1,4 +1,4 @@
-# civic_id
+# civic_id_python/django_version
 
 🇺🇸 CivicID — National Identity & Verification System (Django Build)
 
