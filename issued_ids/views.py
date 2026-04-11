@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import viewsets
-from .models import IssuedIDSerializer
 from .models import IssuedID
+from .serializers import IssuedIDSerializer
 
 # Create your views here.
 # ---------------------------------------------------------------
