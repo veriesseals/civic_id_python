@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import viewsets
 from .models import AuditLog
-from .models import AuditLogSerializer
+from .serializers import AuditLogSerializer
 
 # Create your views here.
 # ---------------------------------------------------------------
