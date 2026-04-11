@@ -14,5 +14,5 @@ class ImmigrationStatusSerializer(serializers.ModelSerializer):
         # --------------------------------------------
         model = ImmigrationStatus
         # Include all fields from the model in the serialization
-        # 
+        # --------------------------------------------
         fields = "__all__"
