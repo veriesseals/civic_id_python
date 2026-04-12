@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class IssuedIdsConfig(AppConfig):
-    name = 'issued_ids'
+    name = 'apps.issued_ids'

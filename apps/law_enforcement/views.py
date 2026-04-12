@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from .models import VerificationRequest
 from .serializers import VerificationRequestSerializer
 from .permissions import IsLawEnforcement
-from audit.models import AuditLog
+from apps.audit.models import AuditLog
 
 # Create your views here.
 # ----------------------------------------------------

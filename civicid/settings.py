@@ -46,15 +46,15 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
 
-    "accounts",
-    "persons",
-    "birth_records",
-    "naturalization",
-    "immigration_status",
-    "id_applications",
-    "issued_ids",
-    "audit",
-    "law_enforcement",
+    "apps.accounts",
+    "apps.persons",
+    "apps.birth_records",
+    "apps.naturalization",
+    "apps.immigration_status",
+    "apps.id_applications",
+    "apps.issued_ids",
+    "apps.audit",
+    "apps.law_enforcement",
 ]
 
 MIDDLEWARE = [

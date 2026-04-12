@@ -1,6 +1,6 @@
 from django.db import models
-from persons.models import Person
-from id_applications.models import IDApplication
+from apps.persons.models import Person
+from apps.id_applications.models import IDApplication
 
 # Create your models here.
 # ----------------------------------------------

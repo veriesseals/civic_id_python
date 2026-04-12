@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class ImmigrationStatusConfig(AppConfig):
-    name = 'immigration_status'
+    name = 'apps.immigration_status'

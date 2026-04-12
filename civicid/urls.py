@@ -17,8 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from immigration_status.views import ImmigrationStatusViewSet
-from naturalization.views import NaturalizationRecordViewSet
+from apps.immigration_status.views import ImmigrationStatusViewSet
+from apps.naturalization.views import NaturalizationRecordViewSet
 
 # Importing the viewsets from our applications to register them with the router.
 # This allows us to automatically generate the URL patterns for our API endpoints based on the viewsets we have defined in our applications.
@@ -30,11 +30,11 @@ from rest_framework_simplejwt.views import (
 
 # Creating a router instance to register our viewsets. The DefaultRouter will automatically generate the URL patterns for our API endpoints based on the viewsets we register with it.
 # ---------------------------------------------------------------
-from persons.views import PersonViewSet
-from birth_records.views import BirthRecordViewSet
-from audit.views import AuditLogViewSet
-from id_applications.views import IDApplicationViewSet
-from issued_ids.views import IssuedIDViewSet
+from apps.persons.views import PersonViewSet
+from apps.birth_records.views import BirthRecordViewSet
+from apps.audit.views import AuditLogViewSet
+from apps.id_applications.views import IDApplicationViewSet
+from apps.issued_ids.views import IssuedIDViewSet
 
 # ----------------------------------------------
 # Register all viewsets with the router
@@ -77,6 +77,6 @@ urlpatterns = [
     
     # Including the URLs for the law enforcement application to allow access to the law enforcement API endpoints under the /api/law-enforcement/ path. This provides a dedicated namespace for our law enforcement-related API endpoints, making it easier to manage and organize our URL patterns.
     # ---------------------------------------------------------------
-    path("api/law-enforcement/", include("law_enforcement.urls")),
+    path("api/law-enforcement/", include("apps.law_enforcement.urls")),
 
 ]

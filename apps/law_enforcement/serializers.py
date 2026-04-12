@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import VerificationRequest
-from persons.models import Person
+from apps.persons.models import Person
 
 # MinimalPersonSerializer — privacy-first design
 # Only exposes the minimum data a law enforcement
