@@ -17,6 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from immigration_status.views import ImmigrationStatusViewSet
+from naturalization.views import NaturalizationRecordViewSet
 
 # Importing the viewsets from our applications to register them with the router.
 # This allows us to automatically generate the URL patterns for our API endpoints based on the viewsets we have defined in our applications.
@@ -52,6 +54,12 @@ router.register(r'birth-records', BirthRecordViewSet)
 router.register(r'audit-logs', AuditLogViewSet)
 router.register(r'id-applications', IDApplicationViewSet)
 router.register(r'issued-ids', IssuedIDViewSet)
+router.register(r'naturalization-records', NaturalizationRecordViewSet)
+router.register(r'immigration-status', ImmigrationStatusViewSet)
+router.register(r'naturalization', NaturalizationRecordViewSet)
+
+
+
 
 urlpatterns = [
     # Including the admin site URL pattern to allow access to the Django admin interface.
