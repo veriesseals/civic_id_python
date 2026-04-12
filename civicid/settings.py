@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "id_applications",
     "issued_ids",
     "audit",
+    "law_enforcement",
 ]
 
 MIDDLEWARE = [
