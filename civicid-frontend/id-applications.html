@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CivicID — ID Applications</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="../css/styles.css" rel="stylesheet" />
+</head>
+<body>
+<script src="../js/civic.js"></script>
+<script>injectHeader('id-applications');</script>
+
+<div class="page-container">
+  <div class="page-hero">
+    <div>
+      <h1><i class="bi bi-card-heading me-2"></i>ID Applications</h1>
+      <p>Manage ID card applications — first-time, renewals, and replacements</p>
+    </div>
+    <div class="hero-meta">
+      TOTAL: <span id="total-count" style="color:var(--gold-light);">Loading...</span>
+    </div>
+  </div>
+
+  <!-- STATUS FILTER PILLS -->
+  <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">
+    <button onclick="filterByStatus('')" class="btn-primary btn-sm" id="pill-all">All</button>
+    <button onclick="filterByStatus('DRAFT')" class="btn-secondary btn-sm" id="pill-draft">Draft</button>
+    <button onclick="filterByStatus('SUBMITTED')" class="btn-secondary btn-sm" id="pill-submitted">Submitted</button>
+    <button onclick="filterByStatus('UNDER_REVIEW')" class="btn-secondary btn-sm" id="pill-under">Under Review</button>
+    <button onclick="filterByStatus('APPROVED')" class="btn-secondary btn-sm" id="pill-approved">Approved</button>
+    <button onclick="filterByStatus('REJECTED')" class="btn-secondary btn-sm" id="pill-rejected">Rejected</button>
+    <button onclick="filterByStatus('ISSUED')" class="btn-secondary btn-sm" id="pill-issued">Issued</button>
+  </div>
+
+  <div class="data-table-wrapper">
+    <div class="table-header">
+      <h2><i class="bi bi-card-heading me-2"></i>Application Registry</h2>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>App ID</th>
+          <th>Person ID</th>
+          <th>Application Type</th>
+          <th>Status</th>
+          <th>Submitted</th>
+          <th>Reviewed By</th>
+          <th>State</th>
+        </tr>
+      </thead>
+      <tbody id="apps-tbody">
+        <tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">Loading applications...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>CivicID v1.0 — DMV ID Applications</p>
+    <img src="../civic_id_logo.png" class="footer-seal" alt="" />
+    <p>Official government identification services</p>
+  </div>
+</footer>
+
+<script>
+let allApps = [];
+
+apiFetch('/id-applications/')
+  .then(data => {
+    allApps = Array.isArray(data) ? data : (data.results || []);
+    document.getElementById('total-count').textContent = allApps.length;
+    renderApps(allApps);
+  })
+  .catch(() => {
+    document.getElementById('total-count').textContent = '0';
+    document.getElementById('apps-tbody').innerHTML = `
+      <tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">
+        <i class="bi bi-wifi-off me-2"></i>Backend offline
+      </td></tr>`;
+  });
+
+function renderApps(items) {
+  const tbody = document.getElementById('apps-tbody');
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">No applications match filter</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(a => `
+    <tr>
+      <td class="mono">#${String(a.id).padStart(4,'0')}</td>
+      <td class="mono">#${String(a.person).padStart(4,'0')}</td>
+      <td>${a.application_type.replace(/_/g,' ')}</td>
+      <td>${statusBadge(a.status)}</td>
+      <td>${formatDate(a.submitted_at)}</td>
+      <td>${a.reviewed_by ? `User #${a.reviewed_by}` : '<span style="color:#8896B0;">Pending</span>'}</td>
+      <td>${a.state_of_issue || '—'}</td>
+    </tr>`).join('');
+}
+
+function filterByStatus(status) {
+  const filtered = status ? allApps.filter(a => a.status === status) : allApps;
+  renderApps(filtered);
+}
+</script>
+</body>
+</html>

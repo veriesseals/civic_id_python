@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CivicID — Persons Registry</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="../css/styles.css" rel="stylesheet" />
+</head>
+<body>
+<script src="../js/civic.js"></script>
+<script>injectHeader('persons');</script>
+
+<div class="page-container">
+  <div class="page-hero">
+    <div>
+      <h1><i class="bi bi-people me-2"></i>Persons Registry</h1>
+      <p>Central identity records — all registered individuals in the system</p>
+    </div>
+    <div class="hero-meta">
+      <div>TOTAL RECORDS: <span id="total-count" style="color:var(--gold-light);">Loading...</span></div>
+    </div>
+  </div>
+
+  <!-- ADD PERSON FORM (collapsible) -->
+  <div class="content-card mb-4" id="addPersonCard" style="display:none;">
+    <div class="card-header" style="justify-content:space-between;">
+      <h3><i class="bi bi-person-plus me-1"></i>Register New Person</h3>
+      <button onclick="document.getElementById('addPersonCard').style.display='none'" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;">&times;</button>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">First Name *</label>
+          <input type="text" class="form-control-gov" id="new-first" placeholder="First name" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Middle Name</label>
+          <input type="text" class="form-control-gov" id="new-middle" placeholder="Middle name (optional)" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Last Name</label>
+          <input type="text" class="form-control-gov" id="new-last" placeholder="Last name" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Date of Birth *</label>
+          <input type="date" class="form-control-gov" id="new-dob" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">City of Birth *</label>
+          <input type="text" class="form-control-gov" id="new-city" placeholder="City" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">State of Birth</label>
+          <input type="text" class="form-control-gov" id="new-state" placeholder="State" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Country of Birth</label>
+          <input type="text" class="form-control-gov" id="new-country" placeholder="USA" value="USA" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Citizenship Status *</label>
+          <select class="form-control-gov" id="new-citizenship">
+            <option value="CITIZEN">Citizen</option>
+            <option value="PERMANENT_RESIDENT">Permanent Resident</option>
+            <option value="VISA_HOLDER">Visa Holder</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <div id="add-error" class="alert-banner danger" style="display:none;">
+            <i class="bi bi-exclamation-triangle"></i><span id="add-error-msg"></span>
+          </div>
+          <div id="add-success" class="alert-banner info" style="display:none;">
+            <i class="bi bi-check-circle"></i>Person registered successfully.
+          </div>
+          <button class="btn-primary" onclick="addPerson()"><i class="bi bi-save me-2"></i>Register Person</button>
+          <button class="btn-secondary ms-2" onclick="document.getElementById('addPersonCard').style.display='none'">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEARCH + TABLE -->
+  <div class="data-table-wrapper">
+    <div class="table-header">
+      <h2><i class="bi bi-people me-2"></i>Identity Records</h2>
+      <div class="table-actions">
+        <input type="text" id="search-input" placeholder="Search by name..." oninput="filterTable()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:3px;font-size:12px;font-family:var(--font-body);" />
+        <button class="btn-primary btn-sm" onclick="document.getElementById('addPersonCard').style.display='block';window.scrollTo(0,0);">+ Register Person</button>
+      </div>
+    </div>
+    <table class="data-table" id="personsTable">
+      <thead>
+        <tr>
+          <th>Record ID</th>
+          <th>Full Name</th>
+          <th>Date of Birth</th>
+          <th>Place of Birth</th>
+          <th>Citizenship</th>
+          <th>Registered</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="persons-tbody">
+        <tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">Loading records...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>CivicID v1.0 — Persons Registry</p>
+    <img src="../civic_id_logo.png" class="footer-seal" alt="" />
+    <p>All records subject to federal privacy regulations</p>
+  </div>
+</footer>
+
+<script>
+let allPersons = [];
+
+apiFetch('/persons/')
+  .then(data => {
+    allPersons = Array.isArray(data) ? data : (data.results || []);
+    document.getElementById('total-count').textContent = allPersons.length.toLocaleString();
+    renderTable(allPersons);
+  })
+  .catch(() => {
+    document.getElementById('total-count').textContent = '0';
+    document.getElementById('persons-tbody').innerHTML = `
+      <tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">
+        <i class="bi bi-wifi-off me-2"></i>Backend offline — start Django server to load data
+      </td></tr>`;
+  });
+
+function renderTable(items) {
+  const tbody = document.getElementById('persons-tbody');
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">No records found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(p => `
+    <tr>
+      <td class="mono">#${String(p.id).padStart(4,'0')}</td>
+      <td><strong>${p.first_name} ${p.middle_name ? p.middle_name[0]+'.' : ''} ${p.last_name || ''}</strong></td>
+      <td>${formatDate(p.date_of_birth)}</td>
+      <td>${p.place_of_birth_city || '—'}${p.place_of_birth_state ? ', ' + p.place_of_birth_state : ''}, ${p.place_of_birth_country}</td>
+      <td>${statusBadge(p.citizenship_status)}</td>
+      <td>${formatDate(p.created_at)}</td>
+      <td>
+        <button class="btn-secondary btn-sm" onclick="viewPerson(${p.id})">View</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const filtered = allPersons.filter(p =>
+    (p.first_name + ' ' + p.last_name).toLowerCase().includes(q)
+  );
+  renderTable(filtered);
+}
+
+function addPerson() {
+  const errEl = document.getElementById('add-error');
+  const errMsg = document.getElementById('add-error-msg');
+  errEl.style.display = 'none';
+  document.getElementById('add-success').style.display = 'none';
+
+  const body = {
+    first_name: document.getElementById('new-first').value.trim(),
+    middle_name: document.getElementById('new-middle').value.trim() || null,
+    last_name: document.getElementById('new-last').value.trim() || null,
+    date_of_birth: document.getElementById('new-dob').value,
+    place_of_birth_city: document.getElementById('new-city').value.trim(),
+    place_of_birth_state: document.getElementById('new-state').value.trim() || null,
+    place_of_birth_country: document.getElementById('new-country').value.trim() || 'USA',
+    citizenship_status: document.getElementById('new-citizenship').value,
+  };
+
+  if (!body.first_name || !body.date_of_birth || !body.place_of_birth_city) {
+    errMsg.textContent = 'First name, date of birth, and city are required.';
+    errEl.style.display = 'flex';
+    return;
+  }
+
+  apiFetch('/persons/', { method: 'POST', body: JSON.stringify(body) })
+    .then(p => {
+      allPersons.unshift(p);
+      renderTable(allPersons);
+      document.getElementById('total-count').textContent = allPersons.length.toLocaleString();
+      document.getElementById('add-success').style.display = 'flex';
+      ['new-first','new-middle','new-last','new-dob','new-city','new-state'].forEach(id => document.getElementById(id).value = '');
+    })
+    .catch(err => {
+      errMsg.textContent = `Failed to register person: ${err.message}`;
+      errEl.style.display = 'flex';
+    });
+}
+
+function viewPerson(id) {
+  alert(`Person #${id} — Full detail view coming soon.\n\nThis would show: birth record, ID applications, immigration status, and issued IDs.`);
+}
+</script>
+</body>
+</html>
