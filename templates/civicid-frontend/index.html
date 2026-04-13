@@ -16,7 +16,6 @@
       --gold: #C9A84C;
       --gold-light: #E8C97A;
       --white: #FFFFFF;
-      --off-white: #F0F2F8;
       --font-display: 'Oswald', sans-serif;
       --font-body: 'Source Sans 3', sans-serif;
     }
@@ -31,7 +30,6 @@
       overflow-x: hidden;
     }
 
-    /* BACKGROUND PATTERN */
     body::before {
       content: '';
       position: fixed;
@@ -55,7 +53,6 @@
       z-index: 0;
     }
 
-    /* CLASSIFICATION BAR */
     .classification-bar {
       position: relative;
       z-index: 10;
@@ -69,7 +66,6 @@
       border-bottom: 1px solid rgba(201,168,76,0.4);
     }
 
-    /* MAIN WRAP */
     .login-wrap {
       position: relative;
       z-index: 5;
@@ -81,7 +77,6 @@
       padding: 40px 20px;
     }
 
-    /* SEAL + TITLE */
     .seal-section {
       text-align: center;
       margin-bottom: 40px;
@@ -93,7 +88,6 @@
       height: 110px;
       filter: brightness(0) invert(1);
       margin-bottom: 20px;
-      drop-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
 
     .system-title {
@@ -129,7 +123,6 @@
       margin: 16px auto;
     }
 
-    /* AGENCY SELECT HEADER */
     .agency-header {
       text-align: center;
       margin-bottom: 28px;
@@ -144,7 +137,6 @@
       text-transform: uppercase;
     }
 
-    /* AGENCY CARDS GRID */
     .agency-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -195,11 +187,7 @@
 
     .agency-card.selected::before { transform: scaleX(1); }
 
-    .agency-icon {
-      font-size: 32px;
-      margin-bottom: 12px;
-      display: block;
-    }
+    .agency-icon { font-size: 32px; margin-bottom: 12px; display: block; }
 
     .agency-card-title {
       font-family: var(--font-display);
@@ -211,18 +199,12 @@
       margin-bottom: 6px;
     }
 
-    .agency-card-desc {
-      font-size: 11px;
-      color: rgba(255,255,255,0.5);
-      line-height: 1.5;
-    }
+    .agency-card-desc { font-size: 11px; color: rgba(255,255,255,0.5); line-height: 1.5; }
 
     .agency-card .check-icon {
       position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 20px;
-      height: 20px;
+      top: 10px; right: 10px;
+      width: 20px; height: 20px;
       background: var(--cobalt-light);
       border-radius: 50%;
       display: none;
@@ -234,14 +216,12 @@
 
     .agency-card.selected .check-icon { display: flex; }
 
-    /* Agency colors */
     .card-registrar { --card-color: #4CAF50; }
-    .card-dmv { --card-color: #2196F3; }
-    .card-law { --card-color: #FF5722; }
-    .card-auditor { --card-color: #FF9800; }
-    .card-admin { --card-color: #C9A84C; }
+    .card-dmv       { --card-color: #2196F3; }
+    .card-law       { --card-color: #FF5722; }
+    .card-auditor   { --card-color: #FF9800; }
+    .card-admin     { --card-color: #C9A84C; }
 
-    /* LOGIN FORM PANEL */
     .login-panel {
       background: white;
       border-radius: 6px;
@@ -322,27 +302,18 @@
       cursor: pointer;
       transition: all 0.2s;
       margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
-    .btn-login:hover {
-      background: var(--cobalt-dark);
-      box-shadow: 0 4px 16px rgba(0,71,171,0.3);
-    }
+    .btn-login:hover { background: var(--cobalt-dark); box-shadow: 0 4px 16px rgba(0,71,171,0.3); }
 
-    .login-divider {
-      height: 1px;
-      background: #EEF1F7;
-      margin: 20px 0;
-    }
+    .login-divider { height: 1px; background: #EEF1F7; margin: 20px 0; }
 
-    .login-footer-note {
-      font-size: 11px;
-      color: #8896B0;
-      text-align: center;
-      line-height: 1.6;
-    }
+    .login-footer-note { font-size: 11px; color: #8896B0; text-align: center; line-height: 1.6; }
 
-    /* FOOTER */
     .login-page-footer {
       text-align: center;
       padding: 20px;
@@ -358,18 +329,16 @@
       text-transform: uppercase;
     }
 
-    /* ANIMATIONS */
     @keyframes fadeDown {
       from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ERROR STATE */
     .error-msg {
       background: #FFF0F0;
       border: 1px solid #FFCDD2;
@@ -382,8 +351,7 @@
       display: none;
     }
 
-    /* LOADING STATE */
-    .btn-login .spinner {
+    .spinner {
       display: none;
       width: 16px;
       height: 16px;
@@ -391,7 +359,6 @@
       border-top-color: white;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
-      margin-right: 8px;
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -399,7 +366,8 @@
 </head>
 <body>
 
-  <img src="/media/civic_id_2026.png" class="watermark" alt="Civic Id Logo" aria-hidden="true" />
+  <!-- Watermark logo — served by Django at /media/ -->
+  <img src="/media/civic_id_2026.png" class="watermark" alt="" aria-hidden="true" onerror="this.style.display='none'" />
 
   <div class="classification-bar">
     ★ &nbsp; UNITED STATES GOVERNMENT — AUTHORIZED ACCESS ONLY &nbsp; ★
@@ -407,16 +375,14 @@
 
   <div class="login-wrap">
 
-    <!-- SEAL + SYSTEM NAME -->
     <div class="seal-section">
-      <img src="media/civic_id_2026.png" class="seal-img" alt="CivicID Seal" />
+      <img src="/media/civic_id_2026.png" class="seal-img" alt="CivicID Seal" onerror="this.style.display='none'" />
       <div class="system-title">United States Government</div>
       <div class="system-name">CIVIC ID</div>
       <div class="system-sub">National Identity &amp; Verification System</div>
       <div class="gold-rule"></div>
     </div>
 
-    <!-- AGENCY SELECTION -->
     <div class="agency-header">
       <p>Select Your Agency to Continue</p>
     </div>
@@ -465,17 +431,13 @@
       </div>
     </div>
 
-    <!-- LOGIN FORM -->
     <div class="login-panel" id="loginPanel">
       <div class="login-panel-header">
         <h2>Secure Access Portal</h2>
         <span class="selected-agency-badge" id="agencyBadge">Select Agency Above</span>
       </div>
       <div class="login-panel-body">
-        <div class="error-msg" id="errorMsg">
-          <i class="bi bi-exclamation-triangle me-2"></i>
-          Invalid credentials. Please verify your access code and try again.
-        </div>
+        <div class="error-msg" id="errorMsg"></div>
 
         <div class="mb-3">
           <label class="form-label-gov">Officer / Employee ID</label>
@@ -510,41 +472,44 @@
   <script>
     let selectedAgency = null;
 
+    // ── Agency route map — absolute Django URL paths ──
+    const ROUTES = {
+      LAW_ENFORCEMENT: '/pages/law-enforcement/',
+      AUDITOR:         '/pages/audit/',
+      SUPER_ADMIN:     '/pages/dashboard/',
+      REGISTRAR:       '/pages/birth-records/',
+      DMV:             '/pages/id-applications/',
+      IMMIGRATION:     '/pages/immigration/',
+    };
+
     function selectAgency(card) {
       document.querySelectorAll('.agency-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       selectedAgency = card.dataset.agency;
-      const label = card.dataset.label;
-      document.getElementById('agencyBadge').textContent = label;
+      document.getElementById('agencyBadge').textContent = card.dataset.label;
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.style.display = 'block';
     }
 
     function doLogin() {
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value.trim();
-      const errorMsg = document.getElementById('errorMsg');
-      const spinner = document.getElementById('spinner');
+      document.getElementById('errorMsg').style.display = 'none';
+
+      if (!selectedAgency) { showError('Please select your agency before logging in.'); return; }
+      if (!username || !password) { showError('Please enter your Employee ID and Access Code.'); return; }
+
+      const spinner   = document.getElementById('spinner');
       const loginText = document.getElementById('loginText');
+      const loginBtn  = document.getElementById('loginBtn');
+      spinner.style.display   = 'inline-block';
+      loginText.textContent   = 'Authenticating...';
+      loginBtn.disabled       = true;
 
-      errorMsg.style.display = 'none';
-
-      if (!selectedAgency) {
-        errorMsg.textContent = 'Please select your agency before logging in.';
-        errorMsg.style.display = 'block';
-        return;
-      }
-
-      if (!username || !password) {
-        errorMsg.textContent = 'Please enter your Employee ID and Access Code.';
-        errorMsg.style.display = 'block';
-        return;
-      }
-
-      // Show loading
-      spinner.style.display = 'inline-block';
-      loginText.textContent = 'Authenticating...';
-      document.getElementById('loginBtn').disabled = true;
-
-      // Call Django JWT endpoint
       fetch('http://127.0.0.1:8000/api/token/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -553,52 +518,30 @@
       .then(res => res.json())
       .then(data => {
         if (data.access) {
-          // Store tokens
-          localStorage.setItem('civic_access', data.access);
-          localStorage.setItem('civic_refresh', data.refresh);
-          localStorage.setItem('civic_agency', selectedAgency);
+          localStorage.setItem('civic_access',   data.access);
+          localStorage.setItem('civic_refresh',  data.refresh);
+          localStorage.setItem('civic_agency',   selectedAgency);
           localStorage.setItem('civic_username', username);
-
-          // Route based on agency
-          const routes = {
-            'LAW_ENFORCEMENT': 'pages/law-enforcement.html',
-            'AUDITOR': 'pages/audit.html',
-            'SUPER_ADMIN': 'pages/dashboard.html',
-            'REGISTRAR': 'pages/birth-records.html',
-            'DMV': 'pages/id-applications.html',
-            'IMMIGRATION': 'pages/immigration.html',
-          };
-          window.location.href = routes[selectedAgency] || 'pages/dashboard.html';
+          window.location.href = ROUTES[selectedAgency] || '/pages/dashboard/';
         } else {
           throw new Error('Auth failed');
         }
       })
       .catch(() => {
-        // Demo mode fallback
-        localStorage.setItem('civic_access', 'demo_token');
-        localStorage.setItem('civic_agency', selectedAgency);
+        // Demo mode — routes still use absolute paths
+        localStorage.setItem('civic_access',   'demo_token');
+        localStorage.setItem('civic_agency',   selectedAgency);
         localStorage.setItem('civic_username', username || 'demo.user');
-        const routes = {
-          'LAW_ENFORCEMENT': 'pages/law-enforcement.html',
-          'AUDITOR': 'pages/audit.html',
-          'SUPER_ADMIN': 'pages/dashboard.html',
-          'REGISTRAR': 'pages/birth-records.html',
-          'DMV': 'pages/id-applications.html',
-          'IMMIGRATION': 'pages/immigration.html',
-        };
-        window.location.href = routes[selectedAgency] || 'pages/dashboard.html';
+        window.location.href = ROUTES[selectedAgency] || '/pages/dashboard/';
       })
       .finally(() => {
         spinner.style.display = 'none';
         loginText.textContent = 'Authenticate & Access';
-        document.getElementById('loginBtn').disabled = false;
+        loginBtn.disabled     = false;
       });
     }
 
-    // Enter key support
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Enter') doLogin();
-    });
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
   </script>
 </body>
 </html>
