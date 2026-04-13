@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CivicID — Issued IDs</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="/static/styles.css" rel="stylesheet" />
+</head>
+<body>
+<script src="/static/civic.js"></script>
+<script>injectHeader('issued-ids');</script>
+
+<div class="page-container">
+
+  <div class="page-hero">
+    <div>
+      <h1><i class="bi bi-card-heading me-2"></i>Issued IDs</h1>
+      <p>Active, expired, replaced, and revoked government-issued identification credentials</p>
+    </div>
+    <div class="hero-meta">
+      TOTAL ISSUED: <span id="total-count" style="color:var(--gold-light);">Loading...</span>
+    </div>
+  </div>
+
+  <!-- STAT CARDS -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="stat-card green">
+        <div class="stat-label"><i class="bi bi-check-circle me-1"></i> Active</div>
+        <div class="stat-value" id="stat-active">0</div>
+        <div class="stat-sub">Valid credentials</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card red">
+        <div class="stat-label"><i class="bi bi-clock-history me-1"></i> Expired</div>
+        <div class="stat-value" id="stat-expired">0</div>
+        <div class="stat-sub">Past expiration date</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card gold">
+        <div class="stat-label"><i class="bi bi-arrow-repeat me-1"></i> Replaced</div>
+        <div class="stat-value" id="stat-replaced">0</div>
+        <div class="stat-sub">Superseded by new ID</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card red">
+        <div class="stat-label"><i class="bi bi-x-circle me-1"></i> Revoked</div>
+        <div class="stat-value" id="stat-revoked">0</div>
+        <div class="stat-sub">Administratively revoked</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUS FILTER PILLS -->
+  <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">
+    <button onclick="filterByStatus('')"        class="btn-primary btn-sm"   id="pill-all">All</button>
+    <button onclick="filterByStatus('ACTIVE')"   class="btn-secondary btn-sm" id="pill-active">Active</button>
+    <button onclick="filterByStatus('EXPIRED')"  class="btn-secondary btn-sm" id="pill-expired">Expired</button>
+    <button onclick="filterByStatus('REPLACED')" class="btn-secondary btn-sm" id="pill-replaced">Replaced</button>
+    <button onclick="filterByStatus('REVOKED')"  class="btn-secondary btn-sm" id="pill-revoked">Revoked</button>
+  </div>
+
+  <!-- ISSUED IDs TABLE -->
+  <div class="data-table-wrapper">
+    <div class="table-header">
+      <h2><i class="bi bi-card-heading me-2"></i>Issued ID Registry</h2>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID Number</th>
+          <th>Person ID</th>
+          <th>Application ID</th>
+          <th>Status</th>
+          <th>Issue Date</th>
+          <th>Expiration Date</th>
+          <th>Days Remaining</th>
+        </tr>
+      </thead>
+      <tbody id="ids-tbody">
+        <tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">Loading issued IDs...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>CivicID v1.0 — DMV Issued IDs</p>
+    <img src="/media/civic_id_2026.png" class="footer-seal" alt="" onerror="this.style.display='none'" />
+    <p>Official government identification records</p>
+  </div>
+</footer>
+
+<script>
+let allIDs = [];
+
+apiFetch('/issued-ids/').then(data => {
+  allIDs = Array.isArray(data) ? data : (data.results || []);
+  document.getElementById('total-count').textContent = allIDs.length;
+  document.getElementById('stat-active').textContent   = allIDs.filter(i => i.status === 'ACTIVE').length;
+  document.getElementById('stat-expired').textContent  = allIDs.filter(i => i.status === 'EXPIRED').length;
+  document.getElementById('stat-replaced').textContent = allIDs.filter(i => i.status === 'REPLACED').length;
+  document.getElementById('stat-revoked').textContent  = allIDs.filter(i => i.status === 'REVOKED').length;
+  renderIDs(allIDs);
+}).catch(() => {
+  document.getElementById('total-count').textContent = '0';
+  document.getElementById('ids-tbody').innerHTML = `
+    <tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">
+      <i class="bi bi-wifi-off me-2"></i>Backend offline — start Django server to load data
+    </td></tr>`;
+});
+
+function daysRemaining(expirationDate) {
+  if (!expirationDate) return '—';
+  const today = new Date();
+  const exp   = new Date(expirationDate);
+  const diff  = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+  if (diff < 0)  return `<span style="color:var(--danger);font-weight:600;">${Math.abs(diff)}d overdue</span>`;
+  if (diff < 30) return `<span style="color:var(--warning);font-weight:600;">${diff}d</span>`;
+  return `<span style="color:var(--success);">${diff}d</span>`;
+}
+
+function renderIDs(items) {
+  const tbody = document.getElementById('ids-tbody');
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">No IDs match filter</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(i => `
+    <tr>
+      <td class="mono">${i.id_number}</td>
+      <td class="mono">#${String(i.person).padStart(4,'0')}</td>
+      <td class="mono">#${String(i.application).padStart(4,'0')}</td>
+      <td>${statusBadge(i.status)}</td>
+      <td>${formatDate(i.issue_date)}</td>
+      <td>${formatDate(i.expiration_date)}</td>
+      <td>${i.status === 'ACTIVE' ? daysRemaining(i.expiration_date) : '—'}</td>
+    </tr>`).join('');
+}
+
+function filterByStatus(status) {
+  document.querySelectorAll('[id^="pill-"]').forEach(b => {
+    b.className = b.id === `pill-${status || 'all'}` ? 'btn-primary btn-sm' : 'btn-secondary btn-sm';
+  });
+  renderIDs(status ? allIDs.filter(i => i.status === status) : allIDs);
+}
+</script>
+</body>
+</html>
