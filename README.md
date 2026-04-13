@@ -1,234 +1,331 @@
-# 🇺🇸 CivicID — National Identity & Verification System
+# 🇺🇸 CivicID — National Identity & Verification System (Django Build)
 
-> A secure, role-based identity platform designed to simulate real-world government infrastructure.
+CivicID is a backend-focused system designed to simulate a modern, secure, and 
+privacy-aware identity platform that enables controlled communication between 
+government agencies.
 
----
-
-## 🧠 Overview
-
-CivicID is a backend system built with Django and Django REST Framework that models a **multi-agency identity and civic management platform**.
-
-It enables structured and secure interaction between government-like domains, including:
-
-- Identity Management
-- Birth Registration
-- ID Issuance
-- Voter Registration
-- Law Enforcement Verification
-- Audit and Compliance Tracking
-
-The system enforces strict access control, traceability, and data boundaries to reflect real-world backend system design.
+This project explores how identity data could be structured, protected, and 
+accessed across agencies such as:
+- Registrars (birth records)
+- DMV (ID issuance)
+- Law Enforcement (verification)
+- Auditors (accountability)
 
 ---
 
 ## 🎯 Project Goals
-
 - Build a centralized identity system
-- Enforce **Role-Based Access Control (RBAC)**
-- Secure APIs using **JWT authentication**
-- Track sensitive operations via **audit logging**
-- Support **civic processes (voter registration)**
-- Simulate real-world backend architecture across multiple domains
+- Enforce strict role-based access control (RBAC)
+- Implement secure authentication (JWT)
+- Ensure auditability of all sensitive actions
+- Design privacy-first law enforcement access
+- Simulate real-world government workflows
 
 ---
 
-## 🏛️ System Roles
-
-| Role | Description |
-|------|------------|
-| SUPER_ADMIN | Full system access (development/testing) |
-| REGISTRAR | Manages birth records |
-| DMV | Handles ID applications and issuance |
-| LAW_ENFORCEMENT | Performs identity verification |
-| AUDITOR | Reviews audit logs |
-| ELECTION_OFFICIAL | Manages voter registration |
-
----
-
-## ⚙️ Tech Stack
-
+## 🧱 Tech Stack
 - Python 3.12
-- Django 5.2.x
-- Django REST Framework
-- SimpleJWT (Authentication)
-- SQLite (Development)
+- Django 5.2.4
+- Django REST Framework 3.16.1
+- SimpleJWT 5.5.1
+- SQLite (development)
 - django-cors-headers
+- django-filter
 
 ---
 
-## 🔐 Authentication (JWT)
+## ⚙️ Core Features
 
-### Obtain Token
+### 🔐 Authentication
+- JWT-based authentication
+- Token issuance & refresh endpoints
+- Protected API routes — all endpoints require a valid token
 
-POST /api/token/
+### 👤 Identity Management
+- Person records
+- Birth records
+- ID applications and issuance
+- Immigration status tracking
+- Naturalization records
 
-### Refresh Token
+### 🏛️ Role-Based Access Control (RBAC)
+| Role | Access Level |
+|---|---|
+| SUPER_ADMIN | Full system access |
+| REGISTRAR | Birth records and naturalization |
+| DMV | ID applications and issued IDs |
+| LAW_ENFORCEMENT | Verification API only |
+| AUDITOR | Read-only audit log access |
 
-POST /api/token/refresh/
-### Usage
+### 🚓 Law Enforcement Verification API
+- Reason-based identity lookup (reason required on every request)
+- Minimal data exposure (privacy-first design)
+- Full audit tracking of every request
+- No unrestricted data browsing
+- Officers can only view their own lookup history
 
----
-
-## 📡 Core API Endpoints
-
-| Endpoint | Description |
-|---------|------------|
-| `/api/persons/` | Core identity records |
-| `/api/birth-records/` | Birth registration |
-| `/api/id-applications/` | ID application workflow |
-| `/api/issued-ids/` | Issued identification |
-| `/api/voter-registrations/` | Voter registration system |
-| `/api/law-enforcement-verifications/` | Identity verification |
-| `/api/audit-logs/` | System activity logs |
-
----
-
-## 🗳️ Voter Registration System
-
-The platform includes a **voter registration module** that integrates with identity records.
-
-### Capabilities:
-- Links voter registration to verified persons
-- Prevents duplicate registrations
-- Tracks eligibility status
-- Restricts access to election officials
-- Logs all registration activity
-
-### Design Principles:
-- Identity-first validation
-- Role-based access
-- Auditability
-- Minimal data exposure
+### 📜 Audit Logging
+- Tracks all sensitive actions across the system
+- Every LE lookup is automatically logged
+- Supports compliance, accountability, and traceability
 
 ---
 
-## 🚓 Law Enforcement Verification
+## 🚀 Getting Started
 
-A controlled verification system for identity lookup.
+### Prerequisites
+- Python 3.12+
+- pip
+- Git
 
-### Features:
-- Reason-based verification requests
-- Limited data responses
-- Automatic association with requesting officer
-- Logged for audit review
+### Installation
 
-### Security Model:
+**1. Clone the repository:**
+```bash
+git clone https://github.com/YOUR_USERNAME/civic_id_python.git
+cd civic_id_python
+```
+
+**2. Create and activate a virtual environment:**
+```bash
+python -m venv .venv
+source .venv/bin/activate        # Mac/Linux
+.venv\Scripts\activate           # Windows
+```
+
+**3. Install dependencies:**
+```bash
+pip install -r requirements.txt
+```
+
+**4. Apply database migrations:**
+```bash
+python manage.py migrate
+```
+
+**5. Create a superuser (admin account):**
+```bash
+python manage.py createsuperuser
+```
+Follow the prompts to set a username and password.
+
+**6. Start the development server:**
+```bash
+python manage.py runserver
+```
+
+The API will be available at `http://127.0.0.1:8000/`
+
+---
+
+## 🔑 Authentication
+
+All API endpoints require a valid JWT token. Here's how to get one:
+
+**Obtain a token:**
+```bash
+curl -X POST http://127.0.0.1:8000/api/token/ \
+  -H "Content-Type: application/json" \
+  -d '{"username": "your_username", "password": "your_password"}'
+```
+
+**Response:**
+```json
+{
+    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Refresh an expired token:**
+```bash
+curl -X POST http://127.0.0.1:8000/api/token/refresh/ \
+  -H "Content-Type: application/json" \
+  -d '{"refresh": "your_refresh_token"}'
+```
+
+**Use your token on all requests:**
+```bash
+curl http://127.0.0.1:8000/api/persons/ \
+  -H "Authorization: Bearer your_access_token"
+```
+
+---
+
+## 📡 API Endpoints
+
+### Base URL: `http://127.0.0.1:8000/api/`
+
+### Persons
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/persons/` | List all persons |
+| POST | `/api/persons/` | Create a new person |
+| GET | `/api/persons/{id}/` | Retrieve a person |
+| PUT | `/api/persons/{id}/` | Update a person |
+| DELETE | `/api/persons/{id}/` | Delete a person |
+
+### Birth Records
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/birth-records/` | List all birth records |
+| POST | `/api/birth-records/` | Create a birth record |
+| GET | `/api/birth-records/{id}/` | Retrieve a birth record |
+| PUT | `/api/birth-records/{id}/` | Update a birth record |
+| DELETE | `/api/birth-records/{id}/` | Delete a birth record |
+
+### ID Applications
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/id-applications/` | List all applications |
+| POST | `/api/id-applications/` | Submit a new application |
+| GET | `/api/id-applications/{id}/` | Retrieve an application |
+| PUT | `/api/id-applications/{id}/` | Update an application |
+| DELETE | `/api/id-applications/{id}/` | Delete an application |
+
+### Issued IDs
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/issued-ids/` | List all issued IDs |
+| POST | `/api/issued-ids/` | Issue a new ID |
+| GET | `/api/issued-ids/{id}/` | Retrieve an issued ID |
+| PUT | `/api/issued-ids/{id}/` | Update an issued ID |
+
+### Immigration Status
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/immigration-status/` | List all statuses |
+| POST | `/api/immigration-status/` | Create a status record |
+| GET | `/api/immigration-status/{id}/` | Retrieve a status |
+| PUT | `/api/immigration-status/{id}/` | Update a status |
+
+### Naturalization Records
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/naturalization/` | List all records |
+| POST | `/api/naturalization/` | Create a record |
+| GET | `/api/naturalization/{id}/` | Retrieve a record |
+| PUT | `/api/naturalization/{id}/` | Update a record |
+
+### Audit Logs (Read-Only)
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/audit-logs/` | List all audit logs |
+| GET | `/api/audit-logs/{id}/` | Retrieve a specific log |
+
+### 🚓 Law Enforcement API
+> Requires `LAW_ENFORCEMENT` role. All requests are automatically logged.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/law-enforcement/verify/` | Submit a verification request |
+| GET | `/api/law-enforcement/history/` | View your own lookup history |
+
+**Verification request body:**
+```json
+{
+    "person": 1,
+    "reason": "Suspect in active investigation case #12345"
+}
+```
+
+**Response (minimal data only):**
+```json
+{
+    "id": 1,
+    "requested_by": 3,
+    "person": 1,
+    "person_details": {
+        "id": 1,
+        "first_name": "John",
+        "last_name": "Doe",
+        "date_of_birth": "1990-05-15",
+        "citizenship_status": "CITIZEN"
+    },
+    "reason": "Suspect in active investigation case #12345",
+    "status": "COMPLETED",
+    "requested_at": "2026-04-12T18:30:00Z"
+}
+```
+
+---
+
+## 🧪 Testing with Postman
+
+1. Download and install [Postman](https://www.postman.com/)
+2. Create a new collection called `CivicID`
+3. Add a `POST` request to `http://127.0.0.1:8000/api/token/`
+4. Set the body to `raw` / `JSON` and enter your credentials
+5. Copy the `access` token from the response
+6. On all other requests add a header: `Authorization: Bearer your_token`
+
+---
+
+## 🛠️ Admin Panel
+
+Access the Django admin interface at:
+
+http://127.0.0.1:8000/admin/
+
+From the admin panel you can:
+- Create and manage users
+- Assign roles to users (`LAW_ENFORCEMENT`, `REGISTRAR`, `DMV`, etc.)
+- View and manage all records across the system
+- Monitor audit logs
+
+---
+
+## 🧪 Development Philosophy
+
+CivicID is built with a real-world mindset, focusing on:
+- Security over convenience
 - Least-privilege access
-- No unrestricted browsing
-- Fully auditable
-
----
-
-## 🔐 Role-Based Access Control (RBAC)
-
-Custom permission classes enforce strict access boundaries:
-
-- Registrar → birth records only
-- DMV → applications and ID issuance
-- Law enforcement → verification only
-- Election officials → voter registration
-- Auditor → read-only logs
-- Super Admin → full system access
-
-Unauthorized access returns:
-
----
-
-## 📜 Audit Logging
-
-Tracks system activity including:
-- Record creation
-- Identity verification
-- Voter registration actions
-
-### Current State:
-- Manual logging implemented
-
-### Planned Enhancements:
-- Automatic logging (middleware/signals)
-- Request metadata tracking
-- IP logging
-- Compliance-level auditing
-
----
-
-## 🧱 Project Structure
-
-civic_id_python/
-├── civicid/              # Project settings
-├── accounts/             # Custom user + roles
-├── persons/              # Identity data
-├── birth_records/        # Birth records
-├── id_applications/      # Application workflow
-├── issued_ids/           # Issued IDs
-├── voter_registration/   # Voter registration system
-├── immigration_status/   # Immigration tracking
-├── naturalization/       # Naturalization records
-├── law_enforcement/      # Verification system
-├── audit/                # Logging
-├── documents/            # Supporting documents
-├── notifications/        # Notifications (in progress)
-├── manage.py
-├── requirements.txt
-└── README.md
+- Clear separation of responsibilities
+- Scalable architecture
+- Professional backend practices
 
 ---
 
 ## 🚧 Project Status
 
-### ✅ Completed
-- Core identity models
-- JWT authentication
-- RBAC system
-- API endpoints for core modules
-- Law enforcement verification (MVP)
-- Voter registration module (MVP)
-- Manual audit logging
+**Version 1.0 — Django/Python**
 
-### 🚧 In Progress
-- Automated audit logging
-- Permission hardening
-- Data exposure control
+Completed:
+- Core models and data structure
+- JWT authentication system
+- Role-based access control (RBAC)
+- Law enforcement verification API
+- Privacy-first minimal data exposure
+- Automatic audit logging on all LE requests
+- Full REST API for all identity data
 
-### 🔮 Planned
-- Frontend dashboard
-- Java / Spring Boot version
-- Docker deployment
-- Cloud hosting
+Upcoming:
+- Advanced audit logging across all endpoints
+- Automated compliance tracking
+- Frontend integration (future)
+- Java/Spring Boot version (planned)
 
 ---
 
-## 💡 Why This Project Matters
+## 💡 Purpose
 
-CivicID demonstrates:
-
+This project demonstrates:
 - Backend system design at scale
-- Role-based architecture (RBAC)
 - Secure API development
-- Multi-domain data modeling
-- Audit-focused engineering
-- Real-world workflow simulation
+- Role-based architecture
+- Government-style data modeling
+- Real-world problem-solving
+- Privacy-first engineering principles
 
 ---
 
 ## 👨‍💻 Author
 
-** Veries Seals III **  
-B.S. Computer Science (Software Engineering)  
-Colorado Technical University  
+**Veries Seals III**  
+Computer Science (Software Engineering) — Colorado Technical University  
+GitHub:[(https://github.com/veriesseals)](https://github.com/veriesseals/civic_id_python)
 
 ---
 
-## 🚀 Future Vision
-
-CivicID is evolving into a **full-scale identity and civic infrastructure prototype**, designed to simulate:
-
-- cross-agency data sharing
-- secure identity + voter registration workflows
-- scalable backend systems
-- enterprise-grade governance controls
-
----
-
-> ⚡ Built with real-world system design in mind
-
+*A multi-agency identity platform with RBAC, audit logging, 
+and privacy-first verification APIs.*

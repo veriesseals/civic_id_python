@@ -1,61 +1,82 @@
 """
 URL configuration for civicid project.
+
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/6.0/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.urls import include, path
+    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import TemplateView
-from django.conf import settings
-from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from apps.immigration_status.views import ImmigrationStatusViewSet
+from apps.naturalization.views import NaturalizationRecordViewSet
 
+# Importing the viewsets from our applications to register them with the router.
+# This allows us to automatically generate the URL patterns for our API endpoints based on the viewsets we have defined in our applications.
+# ---------------------------------------------------------------
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
+
+# Creating a router instance to register our viewsets. The DefaultRouter will automatically generate the URL patterns for our API endpoints based on the viewsets we register with it.
+# ---------------------------------------------------------------
 from apps.persons.views import PersonViewSet
 from apps.birth_records.views import BirthRecordViewSet
 from apps.audit.views import AuditLogViewSet
 from apps.id_applications.views import IDApplicationViewSet
 from apps.issued_ids.views import IssuedIDViewSet
-from apps.immigration_status.views import ImmigrationStatusViewSet
-from apps.naturalization.views import NaturalizationRecordViewSet
-from apps.voter_registration.views import VoterRegistrationViewSet, VoterIDViewSet
 
-# ── API Router ───────────────────────────────────────────────────
+# ----------------------------------------------
+# Register all viewsets with the router
+# The router automatically creates URLs for:
+# GET    /api/persons/          → list all
+# POST   /api/persons/          → create new
+# GET    /api/persons/{id}/     → retrieve one
+# PUT    /api/persons/{id}/     → update one
+# DELETE /api/persons/{id}/     → delete one
+# ----------------------------------------------
+
+# Registering the viewsets with the router to generate the corresponding URL patterns for our API endpoints. This allows us to easily manage our resources through the API without having to manually define each URL pattern.
+# ---------------------------------------------------------------
 router = DefaultRouter()
-router.register(r'persons',             PersonViewSet)
-router.register(r'birth-records',       BirthRecordViewSet)
-router.register(r'audit-logs',          AuditLogViewSet)
-router.register(r'id-applications',     IDApplicationViewSet)
-router.register(r'issued-ids',          IssuedIDViewSet)
-router.register(r'immigration-status',  ImmigrationStatusViewSet)
-router.register(r'naturalization',      NaturalizationRecordViewSet)
-router.register(r'voter-registrations', VoterRegistrationViewSet)
-router.register(r'voter-ids',           VoterIDViewSet)
+router.register(r'persons', PersonViewSet)
+router.register(r'birth-records', BirthRecordViewSet)
+router.register(r'audit-logs', AuditLogViewSet)
+router.register(r'id-applications', IDApplicationViewSet)
+router.register(r'issued-ids', IssuedIDViewSet)
+router.register(r'immigration-status', ImmigrationStatusViewSet)
+router.register(r'naturalization', NaturalizationRecordViewSet)
 
-# ── URL Patterns ─────────────────────────────────────────────────
+
+
+
 urlpatterns = [
+    # Including the admin site URL pattern to allow access to the Django admin interface.
+    # Including the router URLs to make our API endpoints available under the /api/ path. This allows us to access our API endpoints for managing persons, birth records, audit logs, ID applications, and issued IDs through the /api/ URL prefix.
+    # ---------------------------------------------------------------
     path('admin/', admin.site.urls),
-
-    # API
+    
+    # Including the JWT authentication URLs to allow users to obtain and refresh JSON Web Tokens for authentication when interacting with our API endpoints. This provides a secure way to authenticate users and manage access to our API resources.
+    # ---------------------------------------------------------------
     path('api/', include(router.urls)),
-    path('api/token/',         TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(),    name='token_refresh'),
-    path('api/law-enforcement/', include('apps.law_enforcement.urls')),
+    
+    # Adding URL patterns for JWT authentication to allow users to obtain and refresh tokens for secure access to our API endpoints. This ensures that only authenticated users can interact with our API resources, providing an additional layer of security for our application.
+    # ---------------------------------------------------------------
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    
+    # Including the URLs for the law enforcement application to allow access to the law enforcement API endpoints under the /api/law-enforcement/ path. This provides a dedicated namespace for our law enforcement-related API endpoints, making it easier to manage and organize our URL patterns.
+    # ---------------------------------------------------------------
+    path("api/law-enforcement/", include("apps.law_enforcement.urls")),
 
-    # Voter registration custom endpoints
-    path('api/voter/', include('apps.voter_registration.urls')),
-
-    # ── Frontend pages ────────────────────────────────────────────
-    path('',                       TemplateView.as_view(template_name='index.html'),                        name='login'),
-    path('pages/dashboard/',       TemplateView.as_view(template_name='pages/dashboard.html'),              name='dashboard'),
-    path('pages/persons/',         TemplateView.as_view(template_name='pages/persons.html'),                name='persons'),
-    path('pages/birth-records/',   TemplateView.as_view(template_name='pages/birth-records.html'),          name='birth-records'),
-    path('pages/id-applications/', TemplateView.as_view(template_name='pages/id-applications.html'),        name='id-applications'),
-    path('pages/audit/',           TemplateView.as_view(template_name='pages/audit.html'),                  name='audit'),
-    path('pages/law-enforcement/', TemplateView.as_view(template_name='pages/law-enforcement.html'),        name='law-enforcement'),
-    path('pages/immigration/',     TemplateView.as_view(template_name='pages/immigration.html'),            name='immigration'),
-    path('pages/issued-ids/',      TemplateView.as_view(template_name='pages/issued-ids.html'),             name='issued-ids'),
-    path('pages/administration/',  TemplateView.as_view(template_name='pages/administration.html'),         name='administration'),
-    path('pages/voter-registration/', TemplateView.as_view(template_name='pages/voter-registration.html'),  name='voter-registration'),
 ]
-
-# Serve media in development
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

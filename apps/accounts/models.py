@@ -17,7 +17,6 @@ class User(AbstractUser):
         ("DMV", "DMV"),
         ("LAW_ENFORCEMENT", "Law Enforcement"),
         ("AUDITOR", "Auditor"),
-        ("ELECTIONS", "Elections"), 
     ]
     
     # Define the role field to store the user's role in the system. This field uses the ROLE_CHOICES defined above to restrict the possible values and ensure that only valid roles can be assigned to users. The field is optional (blank=True, null=True) to allow for flexibility in user creation and management.
