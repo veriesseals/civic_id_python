@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CivicID — Administration</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="/static/styles.css" rel="stylesheet" />
+</head>
+<body>
+<script src="/static/civic.js"></script>
+<script>injectHeader('administration');</script>
+
+<div class="page-container">
+
+  <div class="page-hero" style="border-left-color: var(--gold);">
+    <div>
+      <h1><i class="bi bi-shield-lock me-2"></i>System Administration</h1>
+      <p>Full system access — user management, roles, and system configuration</p>
+    </div>
+    <div class="hero-meta">
+      <div style="color:var(--gold-light);">SUPER ADMIN</div>
+      <div style="font-size:11px;margin-top:4px;color:rgba(255,255,255,0.5);">Elevated Privileges Active</div>
+    </div>
+  </div>
+
+  <div class="alert-banner warning mb-4">
+    <i class="bi bi-exclamation-triangle-fill" style="font-size:16px;flex-shrink:0;"></i>
+    <div><strong>Administrator Access:</strong> Actions taken here affect the entire system. All changes are logged to the audit trail. For user creation and role assignment, use the <a href="http://127.0.0.1:8000/admin/" target="_blank" style="color:inherit;font-weight:700;">Django Admin Panel</a>.</div>
+  </div>
+
+  <!-- SYSTEM STATS -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-2">
+      <div class="stat-card">
+        <div class="stat-label"><i class="bi bi-people me-1"></i> Persons</div>
+        <div class="stat-value" id="stat-persons">—</div>
+        <div class="stat-sub">Total records</div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="stat-card gold">
+        <div class="stat-label"><i class="bi bi-file-earmark me-1"></i> Applications</div>
+        <div class="stat-value" id="stat-apps">—</div>
+        <div class="stat-sub">ID applications</div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="stat-card green">
+        <div class="stat-label"><i class="bi bi-card-heading me-1"></i> Issued IDs</div>
+        <div class="stat-value" id="stat-ids">—</div>
+        <div class="stat-sub">Active credentials</div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="stat-card">
+        <div class="stat-label"><i class="bi bi-clipboard me-1"></i> Birth Records</div>
+        <div class="stat-value" id="stat-births">—</div>
+        <div class="stat-sub">Registered</div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="stat-card gold">
+        <div class="stat-label"><i class="bi bi-globe me-1"></i> Immigration</div>
+        <div class="stat-value" id="stat-immigration">—</div>
+        <div class="stat-sub">Status records</div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="stat-card red">
+        <div class="stat-label"><i class="bi bi-journal-text me-1"></i> Audit Logs</div>
+        <div class="stat-value" id="stat-audit">—</div>
+        <div class="stat-sub">Total entries</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- LEFT: MODULE ACCESS -->
+    <div class="col-lg-8">
+
+      <!-- QUICK NAVIGATION -->
+      <div class="content-card mb-4">
+        <div class="card-header">
+          <h3><i class="bi bi-grid me-1"></i>System Modules</h3>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <a href="/pages/persons/" style="text-decoration:none;">
+                <div style="background:var(--off-white);border:1px solid var(--light-gray);border-radius:4px;padding:20px;text-align:center;transition:all 0.2s;cursor:pointer;" onmouseover="this.style.borderColor='var(--cobalt)';this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.borderColor='var(--light-gray)';this.style.boxShadow='none'">
+                  <i class="bi bi-people" style="font-size:28px;color:var(--cobalt);display:block;margin-bottom:8px;"></i>
+                  <div style="font-family:var(--font-display);font-size:12px;letter-spacing:1.5px;color:var(--cobalt-dark);">PERSONS</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Identity registry</div>
+                </div>
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="/pages/birth-records/" style="text-decoration:none;">
+                <div style="background:var(--off-white);border:1px solid var(--light-gray);border-radius:4px;padding:20px;text-align:center;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--cobalt)';this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.borderColor='var(--light-gray)';this.style.boxShadow='none'">
+                  <i class="bi bi-clipboard-check" style="font-size:28px;color:var(--cobalt);display:block;margin-bottom:8px;"></i>
+                  <div style="font-family:var(--font-display);font-size:12px;letter-spacing:1.5px;color:var(--cobalt-dark);">BIRTH RECORDS</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Civil registration</div>
+                </div>
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="/pages/id-applications/" style="text-decoration:none;">
+                <div style="background:var(--off-white);border:1px solid var(--light-gray);border-radius:4px;padding:20px;text-align:center;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--cobalt)';this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.borderColor='var(--light-gray)';this.style.boxShadow='none'">
+                  <i class="bi bi-card-heading" style="font-size:28px;color:var(--cobalt);display:block;margin-bottom:8px;"></i>
+                  <div style="font-family:var(--font-display);font-size:12px;letter-spacing:1.5px;color:var(--cobalt-dark);">ID APPLICATIONS</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">DMV applications</div>
+                </div>
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="/pages/immigration/" style="text-decoration:none;">
+                <div style="background:var(--off-white);border:1px solid var(--light-gray);border-radius:4px;padding:20px;text-align:center;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--cobalt)';this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.borderColor='var(--light-gray)';this.style.boxShadow='none'">
+                  <i class="bi bi-globe" style="font-size:28px;color:var(--cobalt);display:block;margin-bottom:8px;"></i>
+                  <div style="font-family:var(--font-display);font-size:12px;letter-spacing:1.5px;color:var(--cobalt-dark);">IMMIGRATION</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Status &amp; naturalization</div>
+                </div>
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="/pages/audit/" style="text-decoration:none;">
+                <div style="background:var(--off-white);border:1px solid var(--light-gray);border-radius:4px;padding:20px;text-align:center;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--cobalt)';this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.borderColor='var(--light-gray)';this.style.boxShadow='none'">
+                  <i class="bi bi-journal-text" style="font-size:28px;color:var(--cobalt);display:block;margin-bottom:8px;"></i>
+                  <div style="font-family:var(--font-display);font-size:12px;letter-spacing:1.5px;color:var(--cobalt-dark);">AUDIT LOGS</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Compliance trail</div>
+                </div>
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="http://127.0.0.1:8000/admin/" target="_blank" style="text-decoration:none;">
+                <div style="background:var(--cobalt-deeper);border:1px solid var(--gold);border-radius:4px;padding:20px;text-align:center;transition:all 0.2s;" onmouseover="this.style.boxShadow='var(--shadow-blue)'" onmouseout="this.style.boxShadow='none'">
+                  <i class="bi bi-gear" style="font-size:28px;color:var(--gold);display:block;margin-bottom:8px;"></i>
+                  <div style="font-family:var(--font-display);font-size:12px;letter-spacing:1.5px;color:var(--gold-light);">DJANGO ADMIN</div>
+                  <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px;">User &amp; role management</div>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- API ENDPOINTS REFERENCE -->
+      <div class="content-card">
+        <div class="card-header"><h3><i class="bi bi-code-slash me-1"></i>API Endpoint Reference</h3></div>
+        <div class="card-body" style="padding:0;">
+          <table class="data-table">
+            <thead>
+              <tr><th>Endpoint</th><th>Methods</th><th>Description</th><th>Role Required</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="mono">/api/persons/</td><td>GET, POST</td><td>Person registry</td><td>Any authenticated</td></tr>
+              <tr><td class="mono">/api/birth-records/</td><td>GET, POST</td><td>Birth certificates</td><td>Any authenticated</td></tr>
+              <tr><td class="mono">/api/id-applications/</td><td>GET, POST</td><td>ID applications</td><td>Any authenticated</td></tr>
+              <tr><td class="mono">/api/issued-ids/</td><td>GET, POST</td><td>Issued credentials</td><td>Any authenticated</td></tr>
+              <tr><td class="mono">/api/immigration-status/</td><td>GET, POST</td><td>Immigration records</td><td>Any authenticated</td></tr>
+              <tr><td class="mono">/api/naturalization/</td><td>GET, POST</td><td>Naturalization records</td><td>Any authenticated</td></tr>
+              <tr><td class="mono">/api/audit-logs/</td><td>GET</td><td>Audit trail (read-only)</td><td>Any authenticated</td></tr>
+              <tr><td class="mono">/api/law-enforcement/verify/</td><td>POST</td><td>Identity lookup</td><td><span class="status-badge rejected">LAW_ENFORCEMENT</span></td></tr>
+              <tr><td class="mono">/api/law-enforcement/history/</td><td>GET</td><td>Officer lookup history</td><td><span class="status-badge rejected">LAW_ENFORCEMENT</span></td></tr>
+              <tr><td class="mono">/api/token/</td><td>POST</td><td>Obtain JWT token</td><td>None</td></tr>
+              <tr><td class="mono">/api/token/refresh/</td><td>POST</td><td>Refresh JWT token</td><td>None</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: SYSTEM INFO -->
+    <div class="col-lg-4">
+
+      <div class="sidebar mb-4">
+        <div class="sidebar-header">System Configuration</div>
+        <div class="sidebar-item">
+          <div><div class="item-label">Django Version</div><div class="item-value">5.2.4</div></div>
+          <span class="status-badge active">Active</span>
+        </div>
+        <div class="sidebar-item">
+          <div><div class="item-label">DRF Version</div><div class="item-value">3.16.1</div></div>
+          <span class="status-badge active">Active</span>
+        </div>
+        <div class="sidebar-item">
+          <div><div class="item-label">Auth Mode</div><div class="item-value">SimpleJWT</div></div>
+          <span class="status-badge verified">Configured</span>
+        </div>
+        <div class="sidebar-item">
+          <div><div class="item-label">Database</div><div class="item-value">SQLite (Dev)</div></div>
+          <span class="status-badge active">Online</span>
+        </div>
+        <div class="sidebar-item">
+          <div><div class="item-label">CORS</div><div class="item-value">Allow All Origins</div></div>
+          <span class="status-badge pending">Dev Mode</span>
+        </div>
+        <div class="sidebar-item">
+          <div><div class="item-label">Debug Mode</div><div class="item-value">Enabled</div></div>
+          <span class="status-badge pending">Dev Only</span>
+        </div>
+      </div>
+
+      <div class="sidebar mb-4">
+        <div class="sidebar-header">RBAC Roles</div>
+        <div class="sidebar-item">
+          <div><div class="item-label">Role</div><div class="item-value">SUPER_ADMIN</div></div>
+          <span class="status-badge active">Full Access</span>
+        </div>
+        <div class="sidebar-item">
+          <div><div class="item-label">Role</div><div class="item-value">REGISTRAR</div></div>
+          <span class="status-badge verified">Birth Records</span>
+        </div>
+        <div class="sidebar-item">
+          <div><div class="item-label">Role</div><div class="item-value">DMV</div></div>
+          <span class="status-badge verified">ID Services</span>
+        </div>
+        <div class="sidebar-item">
+          <div><div class="item-label">Role</div><div class="item-value">LAW_ENFORCEMENT</div></div>
+          <span class="status-badge rejected">Verify Only</span>
+        </div>
+        <div class="sidebar-item">
+          <div><div class="item-label">Role</div><div class="item-value">AUDITOR</div></div>
+          <span class="status-badge pending">Read Only</span>
+        </div>
+      </div>
+
+      <div class="content-card">
+        <div class="card-header"><h3><i class="bi bi-link-45deg me-1"></i>Admin Links</h3></div>
+        <div class="card-body" style="padding:12px;">
+          <div class="d-grid gap-2">
+            <a href="http://127.0.0.1:8000/admin/" target="_blank" class="btn-primary" style="text-align:left;padding:12px 16px;">
+              <i class="bi bi-gear me-2"></i>Django Admin Panel
+            </a>
+            <a href="http://127.0.0.1:8000/admin/accounts/user/" target="_blank" class="btn-secondary" style="text-align:left;padding:12px 16px;">
+              <i class="bi bi-person-gear me-2"></i>Manage Users
+            </a>
+            <a href="http://127.0.0.1:8000/api/" target="_blank" class="btn-secondary" style="text-align:left;padding:12px 16px;">
+              <i class="bi bi-code me-2"></i>API Browser
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>CivicID v1.0 — System Administration</p>
+    <img src="/media/civic_id_2026.png" class="footer-seal" alt="" onerror="this.style.display='none'" />
+    <p>Administrative access — all actions are logged and audited</p>
+  </div>
+</footer>
+
+<script>
+// Load all system stats
+apiFetch('/persons/').then(data => { document.getElementById('stat-persons').textContent = (Array.isArray(data) ? data : (data.results || [])).length; }).catch(() => document.getElementById('stat-persons').textContent = '0');
+apiFetch('/id-applications/').then(data => { document.getElementById('stat-apps').textContent = (Array.isArray(data) ? data : (data.results || [])).length; }).catch(() => document.getElementById('stat-apps').textContent = '0');
+apiFetch('/issued-ids/').then(data => { document.getElementById('stat-ids').textContent = (Array.isArray(data) ? data : (data.results || [])).length; }).catch(() => document.getElementById('stat-ids').textContent = '0');
+apiFetch('/birth-records/').then(data => { document.getElementById('stat-births').textContent = (Array.isArray(data) ? data : (data.results || [])).length; }).catch(() => document.getElementById('stat-births').textContent = '0');
+apiFetch('/immigration-status/').then(data => { document.getElementById('stat-immigration').textContent = (Array.isArray(data) ? data : (data.results || [])).length; }).catch(() => document.getElementById('stat-immigration').textContent = '0');
+apiFetch('/audit-logs/').then(data => { document.getElementById('stat-audit').textContent = (Array.isArray(data) ? data : (data.results || [])).length; }).catch(() => document.getElementById('stat-audit').textContent = '0');
+</script>
+</body>
+</html>

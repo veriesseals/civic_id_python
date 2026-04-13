@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CivicID — Law Enforcement Verification</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="/static/styles.css" rel="stylesheet" />
+  <style>
+    .result-panel { background:white;border:2px solid var(--cobalt);border-radius:6px;overflow:hidden;box-shadow:var(--shadow-blue);display:none; }
+    .result-header { background:var(--cobalt);padding:16px 24px;display:flex;align-items:center;justify-content:space-between; }
+    .result-header h3 { font-family:var(--font-display);font-size:14px;letter-spacing:2px;text-transform:uppercase;color:white; }
+    .result-classified { background:var(--gold);color:var(--cobalt-deeper);font-family:var(--font-display);font-size:10px;font-weight:600;letter-spacing:2px;padding:4px 12px;border-radius:2px; }
+    .result-body { padding:28px; }
+    .result-field { display:flex;flex-direction:column;margin-bottom:20px; }
+    .result-field-label { font-family:var(--font-display);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px; }
+    .result-field-value { font-size:16px;font-weight:600;color:var(--text-dark);padding:10px 0;border-bottom:1px solid var(--light-gray); }
+    .verify-form { background:white;border:1px solid var(--light-gray);border-left:4px solid var(--danger);border-radius:4px;box-shadow:var(--shadow-sm); }
+    .verify-form-header { background:var(--cobalt-deeper);padding:16px 24px;border-bottom:2px solid var(--danger); }
+    .verify-form-header h2 { font-family:var(--font-display);font-size:14px;letter-spacing:2px;color:white;text-transform:uppercase; }
+    .required-tag { background:var(--danger);color:white;font-size:9px;font-family:var(--font-display);letter-spacing:1px;padding:2px 7px;border-radius:2px; }
+  </style>
+</head>
+<body>
+<script src="/static/civic.js"></script>
+<script>injectHeader('law-enforcement');</script>
+
+<div class="page-container">
+  <div class="page-hero" style="border-left-color: var(--danger);">
+    <div>
+      <h1><i class="bi bi-shield-lock me-2"></i>Law Enforcement Identity Verification</h1>
+      <p>Privacy-first identity lookup — reason required — all lookups are audit logged</p>
+    </div>
+    <div class="hero-meta" style="color:rgba(255,255,255,0.7);">
+      <div style="color:#FF8A80;font-size:11px;letter-spacing:1px;">⚠ RESTRICTED ACCESS</div>
+      <div style="margin-top:4px;font-size:11px;">LAW ENFORCEMENT PORTAL</div>
+    </div>
+  </div>
+
+  <div class="alert-banner warning mb-4">
+    <i class="bi bi-exclamation-triangle-fill" style="font-size:18px;flex-shrink:0;color:var(--gold);"></i>
+    <div><strong>Notice:</strong> Only minimum necessary information will be returned. Every lookup is permanently logged. Unauthorized lookups may result in disciplinary action.</div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-5">
+      <div class="verify-form">
+        <div class="verify-form-header">
+          <h2><i class="bi bi-search me-2"></i>Identity Lookup Request</h2>
+        </div>
+        <div style="padding:24px;">
+          <div class="mb-3">
+            <label class="form-label">Person ID <span class="required-tag">REQUIRED</span></label>
+            <input type="number" class="form-control-gov" id="person-id" placeholder="Enter Person Record ID (e.g. 1)" />
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Reason for Lookup <span class="required-tag">REQUIRED</span></label>
+            <textarea class="form-control-gov" id="lookup-reason" rows="4" placeholder="e.g. Suspect in active investigation — Case #2026-0847." style="resize:vertical;"></textarea>
+          </div>
+          <div class="alert-banner info mb-3" style="font-size:12px;">
+            <i class="bi bi-shield-check"></i>
+            Only 5 fields returned: Name, DOB, and Citizenship Status
+          </div>
+          <button class="btn-primary" style="width:100%;padding:13px;" onclick="doLookup()" id="lookup-btn">
+            <i class="bi bi-search me-2"></i>Submit Verification Request
+          </button>
+          <div id="lookup-error" style="display:none;margin-top:12px;" class="alert-banner danger">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span id="lookup-error-msg">Error</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="result-panel" id="resultPanel">
+        <div class="result-header">
+          <h3><i class="bi bi-person-badge me-2"></i>Identity Verification Result</h3>
+          <span class="result-classified">MINIMAL DATA — PRIVACY PROTECTED</span>
+        </div>
+        <div class="result-body">
+          <div style="background:#E8F5E9;border:1px solid #A5D6A7;border-radius:3px;padding:10px 16px;margin-bottom:20px;font-size:13px;color:#1A6B3C;">
+            <i class="bi bi-check-circle me-2"></i>Lookup completed — Logged to audit trail — <strong id="result-timestamp">—</strong>
+          </div>
+          <div class="row">
+            <div class="col-md-6"><div class="result-field"><div class="result-field-label">First Name</div><div class="result-field-value" id="r-first-name">—</div></div></div>
+            <div class="col-md-6"><div class="result-field"><div class="result-field-label">Last Name</div><div class="result-field-value" id="r-last-name">—</div></div></div>
+            <div class="col-md-6"><div class="result-field"><div class="result-field-label">Date of Birth</div><div class="result-field-value" id="r-dob">—</div></div></div>
+            <div class="col-md-6"><div class="result-field"><div class="result-field-label">Citizenship Status</div><div class="result-field-value" id="r-citizenship">—</div></div></div>
+            <div class="col-12"><div class="result-field"><div class="result-field-label">Record ID</div><div class="result-field-value mono" id="r-id">—</div></div></div>
+          </div>
+          <div style="background:#FFF8E1;border:1px solid var(--gold);border-radius:3px;padding:12px 16px;margin-top:8px;font-size:12px;color:#7B5800;">
+            <i class="bi bi-info-circle me-2"></i>Additional records require separate authorization. This lookup has been permanently recorded.
+          </div>
+        </div>
+      </div>
+
+      <div id="emptyState" style="background:white;border:1px solid var(--light-gray);border-radius:4px;padding:48px;text-align:center;color:var(--text-muted);">
+        <i class="bi bi-shield-lock" style="font-size:48px;color:var(--mid-gray);display:block;margin-bottom:16px;"></i>
+        <div style="font-family:var(--font-display);font-size:14px;letter-spacing:1px;color:var(--cobalt-dark);">AWAITING VERIFICATION REQUEST</div>
+        <div style="font-size:13px;margin-top:8px;">Enter a Person ID and reason, then submit to retrieve identity data.</div>
+      </div>
+
+      <div class="data-table-wrapper mt-4">
+        <div class="table-header"><h2><i class="bi bi-clock-history me-2"></i>My Lookup History</h2></div>
+        <table class="data-table">
+          <thead><tr><th>Request ID</th><th>Person</th><th>Reason</th><th>Status</th><th>Date/Time</th></tr></thead>
+          <tbody id="history-tbody">
+            <tr><td colspan="5" style="text-align:center;padding:24px;color:#8896B0;">Loading history...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>CivicID v1.0 — Law Enforcement Portal</p>
+    <img src="/media/civic_id_2026.png" class="footer-seal" alt="" onerror="this.style.display='none'" />
+    <p>All lookups are permanently logged per 18 U.S.C. § 2709</p>
+  </div>
+</footer>
+
+<script>
+function doLookup() {
+  const personId = document.getElementById('person-id').value.trim();
+  const reason   = document.getElementById('lookup-reason').value.trim();
+  const errEl    = document.getElementById('lookup-error');
+  const errMsg   = document.getElementById('lookup-error-msg');
+  errEl.style.display = 'none';
+  if (!personId) { errMsg.textContent = 'Person ID is required.'; errEl.style.display = 'flex'; return; }
+  if (!reason || reason.length < 10) { errMsg.textContent = 'Please provide a detailed reason (minimum 10 characters).'; errEl.style.display = 'flex'; return; }
+  const btn = document.getElementById('lookup-btn');
+  btn.textContent = 'Submitting...'; btn.disabled = true;
+  fetch('http://127.0.0.1:8000/api/law-enforcement/verify/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+    body: JSON.stringify({ person: parseInt(personId), reason })
+  })
+  .then(res => { if (!res.ok) throw new Error(res.status); return res.json(); })
+  .then(data => {
+    const p = data.person_details || {};
+    document.getElementById('r-first-name').textContent = p.first_name || '—';
+    document.getElementById('r-last-name').textContent  = p.last_name  || '—';
+    document.getElementById('r-dob').textContent        = p.date_of_birth || '—';
+    document.getElementById('r-citizenship').innerHTML  = statusBadge(p.citizenship_status || 'UNKNOWN');
+    document.getElementById('r-id').textContent         = `#${String(p.id || data.person).padStart(4,'0')}`;
+    document.getElementById('result-timestamp').textContent = formatDateTime(data.requested_at || new Date().toISOString());
+    document.getElementById('resultPanel').style.display = 'block';
+    document.getElementById('emptyState').style.display  = 'none';
+    loadHistory();
+  })
+  .catch(err => { errMsg.textContent = `Lookup failed (${err.message}).`; errEl.style.display = 'flex'; })
+  .finally(() => { btn.innerHTML = '<i class="bi bi-search me-2"></i>Submit Verification Request'; btn.disabled = false; });
+}
+
+function loadHistory() {
+  fetch('http://127.0.0.1:8000/api/law-enforcement/history/', { headers: { 'Authorization': `Bearer ${getToken()}` } })
+  .then(res => res.json())
+  .then(data => {
+    const items = Array.isArray(data) ? data : (data.results || []);
+    const tbody = document.getElementById('history-tbody');
+    if (!items.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#8896B0;">No lookups recorded yet</td></tr>'; return; }
+    tbody.innerHTML = items.map(r => `
+      <tr>
+        <td class="mono">#${String(r.id).padStart(4,'0')}</td>
+        <td>Person #${String(r.person||'—').padStart(4,'0')}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.reason}">${r.reason}</td>
+        <td>${statusBadge(r.status)}</td>
+        <td>${formatDateTime(r.requested_at)}</td>
+      </tr>`).join('');
+  })
+  .catch(() => { document.getElementById('history-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>'; });
+}
+
+loadHistory();
+</script>
+</body>
+</html>

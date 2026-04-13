@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CivicID — Voter Registration</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="/static/styles.css" rel="stylesheet" />
+  <style>
+    .eligibility-result {
+      border-radius: 4px;
+      padding: 20px 24px;
+      margin-top: 16px;
+      display: none;
+    }
+    .eligibility-result.eligible   { background: #E8F5E9; border: 2px solid #1A6B3C; }
+    .eligibility-result.ineligible { background: #FFEBEE; border: 2px solid #C0392B; }
+    .eligibility-result.registered { background: #E3F2FD; border: 2px solid #0047AB; }
+
+    .eligibility-icon { font-size: 36px; margin-bottom: 8px; }
+
+    .restore-form {
+      background: white;
+      border: 1px solid var(--light-gray);
+      border-left: 4px solid var(--success);
+      border-radius: 4px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .felony-form {
+      background: white;
+      border: 1px solid var(--light-gray);
+      border-left: 4px solid var(--danger);
+      border-radius: 4px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .action-header {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    .action-header h3 {
+      font-family: var(--font-display);
+      font-size: 13px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    .tab-btn {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.7);
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active, .tab-btn:hover {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border-color: rgba(255,255,255,0.4);
+    }
+
+    .tab-btn.active { border-bottom: 2px solid #C9A84C; }
+  </style>
+</head>
+<body>
+<script src="/static/civic.js"></script>
+<script>injectHeader('voter-registration');</script>
+
+<div class="page-container">
+
+  <div class="page-hero" style="border-left-color:#4CAF50;">
+    <div>
+      <h1><i class="bi bi-check2-square me-2"></i>Voter Registration System</h1>
+      <p>Eligibility verification, registration, voter ID issuance, and rights restoration</p>
+    </div>
+    <div class="hero-meta">
+      <div>REGISTERED VOTERS: <span id="total-registered" style="color:var(--gold-light);">Loading...</span></div>
+      <div style="font-size:11px;margin-top:4px;color:rgba(255,255,255,0.5);">Active voter IDs: <span id="total-voter-ids">—</span></div>
+    </div>
+  </div>
+
+  <!-- STAT CARDS -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="stat-card green">
+        <div class="stat-label"><i class="bi bi-person-check me-1"></i> Active Voters</div>
+        <div class="stat-value" id="stat-active">0</div>
+        <div class="stat-sub">Eligible &amp; registered</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card red">
+        <div class="stat-label"><i class="bi bi-person-x me-1"></i> Ineligible</div>
+        <div class="stat-value" id="stat-ineligible">0</div>
+        <div class="stat-sub">Felony / non-citizen / age</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card gold">
+        <div class="stat-label"><i class="bi bi-arrow-counterclockwise me-1"></i> Restored</div>
+        <div class="stat-value" id="stat-restored">0</div>
+        <div class="stat-sub">Rights reinstated</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card">
+        <div class="stat-label"><i class="bi bi-card-heading me-1"></i> Voter IDs Issued</div>
+        <div class="stat-value" id="stat-ids">0</div>
+        <div class="stat-sub">Active credentials</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+
+    <!-- LEFT: ELIGIBILITY CHECKER + REGISTRATION -->
+    <div class="col-lg-5">
+
+      <!-- ELIGIBILITY CHECKER -->
+      <div class="content-card mb-4">
+        <div class="card-header"><h3><i class="bi bi-search me-1"></i>Eligibility Check</h3></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+            Enter a Person ID to check if they meet all eligibility requirements:
+            citizenship, age 18+, and no active felony disqualification.
+          </p>
+          <label class="form-label">Person ID</label>
+          <div style="display:flex;gap:8px;">
+            <input type="number" class="form-control-gov" id="check-person-id" placeholder="e.g. 1" style="flex:1;" />
+            <button class="btn-primary" onclick="checkEligibility()" style="white-space:nowrap;">
+              <i class="bi bi-search me-1"></i>Check
+            </button>
+          </div>
+
+          <div class="eligibility-result" id="eligibility-result">
+            <div class="eligibility-icon" id="elig-icon">—</div>
+            <div style="font-family:var(--font-display);font-size:16px;font-weight:600;" id="elig-name">—</div>
+            <div style="font-size:13px;margin:4px 0 12px;" id="elig-details">—</div>
+            <div id="elig-status-line" style="font-size:13px;font-weight:600;"></div>
+            <div id="elig-reason" style="font-size:12px;margin-top:6px;"></div>
+            <div id="elig-actions" style="margin-top:16px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MANUAL REGISTRATION FORM -->
+      <div class="content-card">
+        <div class="card-header"><h3><i class="bi bi-person-plus me-1"></i>Register Voter</h3></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+            Manually register an eligible citizen. All eligibility gates are enforced server-side.
+          </p>
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Person ID *</label>
+              <input type="number" class="form-control-gov" id="reg-person-id" placeholder="Person record ID" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Party Affiliation</label>
+              <select class="form-control-gov" id="reg-party">
+                <option value="UNAFFILIATED">Unaffiliated</option>
+                <option value="DEMOCRATIC">Democratic</option>
+                <option value="REPUBLICAN">Republican</option>
+                <option value="INDEPENDENT">Independent</option>
+                <option value="GREEN">Green</option>
+                <option value="LIBERTARIAN">Libertarian</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">State</label>
+              <input type="text" class="form-control-gov" id="reg-state" placeholder="e.g. Colorado" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">County</label>
+              <input type="text" class="form-control-gov" id="reg-county" placeholder="e.g. Denver" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Precinct</label>
+              <input type="text" class="form-control-gov" id="reg-precinct" placeholder="e.g. Precinct 12" />
+            </div>
+            <div class="col-12">
+              <div id="reg-error" class="alert-banner danger" style="display:none;"><i class="bi bi-exclamation-triangle"></i><span id="reg-error-msg"></span></div>
+              <div id="reg-success" class="alert-banner info" style="display:none;"><i class="bi bi-check-circle"></i><span id="reg-success-msg">Voter registered successfully.</span></div>
+              <button class="btn-primary" style="width:100%;padding:12px;" onclick="registerVoter()">
+                <i class="bi bi-check2-square me-2"></i>Register &amp; Issue Voter ID
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: FELONY FLAG + RESTORATION -->
+    <div class="col-lg-7">
+
+      <!-- FELONY FLAG -->
+      <div class="felony-form mb-4">
+        <div class="action-header" style="background:#FFF5F5;border-bottom:1px solid #FFCDD2;">
+          <i class="bi bi-exclamation-octagon" style="color:var(--danger);font-size:18px;margin-right:12px;"></i>
+          <h3 style="color:var(--danger);">Flag Felony Conviction</h3>
+        </div>
+        <div style="padding:20px;">
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+            Flag a voter's registration as ineligible due to a felony conviction.
+            Their Voter ID will be suspended immediately.
+          </p>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Registration ID *</label>
+              <input type="number" class="form-control-gov" id="felony-reg-id" placeholder="VoterRegistration ID" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Notes / Case Reference</label>
+              <textarea class="form-control-gov" id="felony-notes" rows="2" placeholder="e.g. Convicted Case #2026-CR-0042 — sentenced 5 years"></textarea>
+            </div>
+            <div class="col-12">
+              <div id="felony-error" class="alert-banner danger" style="display:none;"><i class="bi bi-exclamation-triangle"></i><span id="felony-error-msg"></span></div>
+              <div id="felony-success" class="alert-banner warning" style="display:none;"><i class="bi bi-check-circle"></i><span id="felony-success-msg"></span></div>
+              <button class="btn-danger" style="width:100%;padding:12px;font-size:12px;" onclick="flagFelony()">
+                <i class="bi bi-exclamation-octagon me-2"></i>Flag as Ineligible — Felony Conviction
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHTS RESTORATION -->
+      <div class="restore-form">
+        <div class="action-header" style="background:#F0FFF4;border-bottom:1px solid #A5D6A7;">
+          <i class="bi bi-arrow-counterclockwise" style="color:var(--success);font-size:18px;margin-right:12px;"></i>
+          <h3 style="color:var(--success);">Restore Voting Rights</h3>
+        </div>
+        <div style="padding:20px;">
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+            Restore voting rights for a citizen whose felony has been resolved —
+            sentence completed, pardon granted, or conviction overturned.
+            Their Voter ID will be reactivated automatically.
+          </p>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Registration ID *</label>
+              <input type="number" class="form-control-gov" id="restore-reg-id" placeholder="VoterRegistration ID" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Restoration Notes *</label>
+              <textarea class="form-control-gov" id="restore-notes" rows="2" placeholder="e.g. Sentence completed Apr 2026. Pardon granted by Governor."></textarea>
+            </div>
+            <div class="col-12">
+              <div id="restore-error" class="alert-banner danger" style="display:none;"><i class="bi bi-exclamation-triangle"></i><span id="restore-error-msg"></span></div>
+              <div id="restore-success" class="alert-banner info" style="display:none;"><i class="bi bi-check-circle"></i><span id="restore-success-msg"></span></div>
+              <button class="btn-primary" style="width:100%;padding:12px;background:var(--success);" onclick="restoreRights()">
+                <i class="bi bi-arrow-counterclockwise me-2"></i>Restore Voting Rights &amp; Reactivate ID
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- REGISTRY TABLE -->
+  <div class="data-table-wrapper">
+    <div class="table-header">
+      <h2><i class="bi bi-check2-square me-2"></i>Voter Registry</h2>
+      <div class="table-actions" style="gap:6px;">
+        <button class="tab-btn active" id="tab-all"        onclick="filterRegistry('')">All</button>
+        <button class="tab-btn"        id="tab-active"     onclick="filterRegistry('ACTIVE')">Active</button>
+        <button class="tab-btn"        id="tab-ineligible" onclick="filterRegistry('INELIGIBLE')">Ineligible</button>
+        <button class="tab-btn"        id="tab-restored"   onclick="filterRegistry('RESTORED')">Restored</button>
+      </div>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Reg ID</th>
+          <th>Person</th>
+          <th>Reg Number</th>
+          <th>Party</th>
+          <th>County / State</th>
+          <th>Status</th>
+          <th>Voter ID #</th>
+          <th>Felony</th>
+          <th>Registered</th>
+        </tr>
+      </thead>
+      <tbody id="registry-tbody">
+        <tr><td colspan="9" style="text-align:center;padding:32px;color:#8896B0;">Loading registry...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>CivicID v1.0 — Elections Office</p>
+    <img src="/media/civic_id_2026.png" class="footer-seal" alt="" onerror="this.style.display='none'" />
+    <p>Voter records maintained per 52 U.S.C. § 20501 — National Voter Registration Act</p>
+  </div>
+</footer>
+
+<script>
+let allRegistrations = [];
+
+// ── Load stats & registry ────────────────────────────────────────
+function loadData() {
+  apiFetch('/voter-registrations/').then(data => {
+    allRegistrations = Array.isArray(data) ? data : (data.results || []);
+    document.getElementById('total-registered').textContent = allRegistrations.length;
+    document.getElementById('stat-active').textContent     = allRegistrations.filter(r => r.status === 'ACTIVE').length;
+    document.getElementById('stat-ineligible').textContent = allRegistrations.filter(r => r.status === 'INELIGIBLE').length;
+    document.getElementById('stat-restored').textContent   = allRegistrations.filter(r => r.status === 'RESTORED').length;
+    renderRegistry(allRegistrations);
+  }).catch(() => {
+    document.getElementById('total-registered').textContent = '0';
+    document.getElementById('registry-tbody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
+  });
+
+  apiFetch('/voter-ids/').then(data => {
+    const items = Array.isArray(data) ? data : (data.results || []);
+    document.getElementById('total-voter-ids').textContent = items.length;
+    document.getElementById('stat-ids').textContent = items.filter(i => i.status === 'ACTIVE').length;
+  }).catch(() => {});
+}
+
+function renderRegistry(items) {
+  const tbody = document.getElementById('registry-tbody');
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:#8896B0;">No records found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(r => `
+    <tr>
+      <td class="mono">#${String(r.id).padStart(4,'0')}</td>
+      <td><strong>${r.person_name || `Person #${r.person}`}</strong></td>
+      <td class="mono" style="font-size:12px;">${r.registration_number}</td>
+      <td style="font-size:12px;">${r.party_affiliation.replace(/_/g,' ')}</td>
+      <td style="font-size:12px;">${r.county || '—'}${r.state ? ', '+r.state : ''}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td class="mono" style="font-size:11px;">${r.voter_id ? r.voter_id.voter_id_number : '<span style="color:#8896B0;">None</span>'}</td>
+      <td style="text-align:center;">
+        ${r.has_felony_record
+          ? r.felony_resolved
+            ? '<span style="color:var(--success);font-size:12px;">✓ Resolved</span>'
+            : '<span style="color:var(--danger);font-size:12px;">⚠ Active</span>'
+          : '<span style="color:#8896B0;font-size:12px;">None</span>'}
+      </td>
+      <td style="font-size:12px;">${formatDate(r.registration_date)}</td>
+    </tr>`).join('');
+}
+
+function filterRegistry(status) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const tabMap = { '': 'tab-all', 'ACTIVE': 'tab-active', 'INELIGIBLE': 'tab-ineligible', 'RESTORED': 'tab-restored' };
+  const btn = document.getElementById(tabMap[status]);
+  if (btn) btn.classList.add('active');
+  renderRegistry(status ? allRegistrations.filter(r => r.status === status) : allRegistrations);
+}
+
+// ── Eligibility check ────────────────────────────────────────────
+function checkEligibility() {
+  const personId = document.getElementById('check-person-id').value.trim();
+  if (!personId) return;
+
+  const resultEl = document.getElementById('eligibility-result');
+  resultEl.style.display = 'none';
+
+  fetch(`http://127.0.0.1:8000/api/voter/eligibility/?person_id=${personId}`, {
+    headers: { 'Authorization': `Bearer ${getToken()}` }
+  })
+  .then(res => res.json())
+  .then(data => {
+    resultEl.style.display = 'block';
+    resultEl.className = 'eligibility-result';
+
+    document.getElementById('elig-name').textContent    = data.person_name;
+    document.getElementById('elig-details').textContent =
+      `Age: ${data.age} · Citizenship: ${data.citizenship_status.replace(/_/g,' ')}`;
+
+    if (data.already_registered) {
+      resultEl.classList.add('registered');
+      document.getElementById('elig-icon').textContent  = '🗳️';
+      document.getElementById('elig-status-line').textContent = 'Already Registered';
+      document.getElementById('elig-reason').textContent = 'This person is already in the voter registry.';
+      document.getElementById('elig-actions').innerHTML  = '';
+    } else if (data.eligible) {
+      resultEl.classList.add('eligible');
+      document.getElementById('elig-icon').textContent  = '✅';
+      document.getElementById('elig-status-line').textContent = 'ELIGIBLE TO REGISTER';
+      document.getElementById('elig-reason').textContent = 'All eligibility requirements met.';
+      document.getElementById('elig-actions').innerHTML  = `
+        <button class="btn-primary btn-sm" onclick="prefillRegistration(${data.person_id})">
+          <i class="bi bi-check2-square me-1"></i>Pre-fill Registration Form
+        </button>`;
+    } else {
+      resultEl.classList.add('ineligible');
+      document.getElementById('elig-icon').textContent  = '❌';
+      document.getElementById('elig-status-line').textContent = 'NOT ELIGIBLE';
+      document.getElementById('elig-reason').textContent = data.reason;
+      document.getElementById('elig-actions').innerHTML  = '';
+    }
+  })
+  .catch(() => {
+    resultEl.style.display = 'block';
+    resultEl.className = 'eligibility-result ineligible';
+    document.getElementById('elig-icon').textContent = '⚠️';
+    document.getElementById('elig-name').textContent = 'Error';
+    document.getElementById('elig-details').textContent = '';
+    document.getElementById('elig-status-line').textContent = 'Could not check — backend offline or person not found.';
+    document.getElementById('elig-reason').textContent = '';
+    document.getElementById('elig-actions').innerHTML = '';
+  });
+}
+
+function prefillRegistration(personId) {
+  document.getElementById('reg-person-id').value = personId;
+  document.getElementById('reg-person-id').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── Register voter ────────────────────────────────────────────────
+function registerVoter() {
+  const errEl = document.getElementById('reg-error');
+  const sucEl = document.getElementById('reg-success');
+  errEl.style.display = 'none'; sucEl.style.display = 'none';
+
+  const personId = document.getElementById('reg-person-id').value.trim();
+  if (!personId) {
+    document.getElementById('reg-error-msg').textContent = 'Person ID is required.';
+    errEl.style.display = 'flex'; return;
+  }
+
+  fetch('http://127.0.0.1:8000/api/voter/register/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+    body: JSON.stringify({
+      person_id:         parseInt(personId),
+      party_affiliation: document.getElementById('reg-party').value,
+      state:             document.getElementById('reg-state').value.trim(),
+      county:            document.getElementById('reg-county').value.trim(),
+      precinct:          document.getElementById('reg-precinct').value.trim(),
+    })
+  })
+  .then(res => res.json().then(d => ({ ok: res.ok, data: d })))
+  .then(({ ok, data }) => {
+    if (!ok) {
+      document.getElementById('reg-error-msg').textContent = data.error || 'Registration failed.';
+      errEl.style.display = 'flex';
+    } else {
+      const reg = data.registration;
+      document.getElementById('reg-success-msg').textContent =
+        `Registered! Reg# ${reg.registration_number} · Voter ID: ${reg.voter_id?.voter_id_number || 'Issued'}`;
+      sucEl.style.display = 'flex';
+      loadData();
+    }
+  })
+  .catch(() => {
+    document.getElementById('reg-error-msg').textContent = 'Backend offline.';
+    errEl.style.display = 'flex';
+  });
+}
+
+// ── Flag felony ───────────────────────────────────────────────────
+function flagFelony() {
+  const errEl = document.getElementById('felony-error');
+  const sucEl = document.getElementById('felony-success');
+  errEl.style.display = 'none'; sucEl.style.display = 'none';
+
+  const regId = document.getElementById('felony-reg-id').value.trim();
+  if (!regId) {
+    document.getElementById('felony-error-msg').textContent = 'Registration ID is required.';
+    errEl.style.display = 'flex'; return;
+  }
+
+  fetch('http://127.0.0.1:8000/api/voter/flag-felony/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+    body: JSON.stringify({ registration_id: parseInt(regId), notes: document.getElementById('felony-notes').value.trim() })
+  })
+  .then(res => res.json().then(d => ({ ok: res.ok, data: d })))
+  .then(({ ok, data }) => {
+    if (!ok) {
+      document.getElementById('felony-error-msg').textContent = data.error || 'Failed.';
+      errEl.style.display = 'flex';
+    } else {
+      document.getElementById('felony-success-msg').textContent = 'Voter flagged as ineligible. Voter ID suspended.';
+      sucEl.style.display = 'flex';
+      loadData();
+    }
+  })
+  .catch(() => { document.getElementById('felony-error-msg').textContent = 'Backend offline.'; errEl.style.display = 'flex'; });
+}
+
+// ── Restore rights ────────────────────────────────────────────────
+function restoreRights() {
+  const errEl = document.getElementById('restore-error');
+  const sucEl = document.getElementById('restore-success');
+  errEl.style.display = 'none'; sucEl.style.display = 'none';
+
+  const regId = document.getElementById('restore-reg-id').value.trim();
+  if (!regId) {
+    document.getElementById('restore-error-msg').textContent = 'Registration ID is required.';
+    errEl.style.display = 'flex'; return;
+  }
+
+  fetch('http://127.0.0.1:8000/api/voter/restore/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+    body: JSON.stringify({ registration_id: parseInt(regId), notes: document.getElementById('restore-notes').value.trim() })
+  })
+  .then(res => res.json().then(d => ({ ok: res.ok, data: d })))
+  .then(({ ok, data }) => {
+    if (!ok) {
+      document.getElementById('restore-error-msg').textContent = data.error || 'Failed.';
+      errEl.style.display = 'flex';
+    } else {
+      document.getElementById('restore-success-msg').textContent = 'Voting rights restored. Voter ID reactivated.';
+      sucEl.style.display = 'flex';
+      loadData();
+    }
+  })
+  .catch(() => { document.getElementById('restore-error-msg').textContent = 'Backend offline.'; errEl.style.display = 'flex'; });
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>

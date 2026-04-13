@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CivicID — Audit Logs</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="/static/styles.css" rel="stylesheet" />
+</head>
+<body>
+<script src="/static/civic.js"></script>
+<script>injectHeader('audit');</script>
+
+<div class="page-container">
+  <div class="page-hero" style="border-left-color: var(--gold);">
+    <div>
+      <h1><i class="bi bi-journal-text me-2"></i>System Audit Log</h1>
+      <p>Complete record of all sensitive actions — immutable compliance trail</p>
+    </div>
+    <div class="hero-meta">
+      <div>TOTAL ENTRIES: <span id="total-entries" style="color:var(--gold-light);">Loading...</span></div>
+      <div style="font-size:11px;margin-top:4px;color:rgba(255,255,255,0.5);">READ-ONLY — Cannot be modified</div>
+    </div>
+  </div>
+
+  <div class="alert-banner warning mb-4">
+    <i class="bi bi-shield-check" style="font-size:16px;flex-shrink:0;"></i>
+    <div>This is a read-only compliance log. All entries are permanent and tamper-evident.</div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="stat-card">
+        <div class="stat-label"><i class="bi bi-search me-1"></i> LE Lookups</div>
+        <div class="stat-value" id="stat-le">0</div>
+        <div class="stat-sub">Verification requests</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card green">
+        <div class="stat-label"><i class="bi bi-plus-circle me-1"></i> Create Events</div>
+        <div class="stat-value" id="stat-create">0</div>
+        <div class="stat-sub">Records created</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card gold">
+        <div class="stat-label"><i class="bi bi-pencil me-1"></i> Update Events</div>
+        <div class="stat-value" id="stat-update">0</div>
+        <div class="stat-sub">Records modified</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card red">
+        <div class="stat-label"><i class="bi bi-people me-1"></i> Unique Users</div>
+        <div class="stat-value" id="stat-users">0</div>
+        <div class="stat-sub">Officers logged</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="data-table-wrapper">
+    <div class="table-header">
+      <h2><i class="bi bi-journal-text me-2"></i>Audit Entries</h2>
+      <div class="table-actions">
+        <select id="filter-type" onchange="filterLogs()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:3px;font-size:12px;font-family:var(--font-display);letter-spacing:1px;">
+          <option value="">All Actions</option>
+          <option value="LAW_ENFORCEMENT_LOOKUP">LE Lookups</option>
+          <option value="CREATE">Creates</option>
+          <option value="UPDATE">Updates</option>
+          <option value="DELETE">Deletes</option>
+        </select>
+      </div>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Log ID</th><th>User</th><th>Action</th><th>Entity</th><th>Entity ID</th><th>Reason / Notes</th><th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody id="audit-tbody">
+        <tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">Loading audit log...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>CivicID v1.0 — Compliance Audit System</p>
+    <img src="/media/civic_id_2026.png" class="footer-seal" alt="" onerror="this.style.display='none'" />
+    <p>Audit records retained per 44 U.S.C. § 3301 federal records requirements</p>
+  </div>
+</footer>
+
+<script>
+let allLogs = [];
+
+apiFetch('/audit-logs/').then(data => {
+  allLogs = Array.isArray(data) ? data : (data.results || []);
+  document.getElementById('total-entries').textContent = allLogs.length.toLocaleString();
+  document.getElementById('stat-le').textContent = allLogs.filter(l => l.action_type === 'LAW_ENFORCEMENT_LOOKUP').length;
+  document.getElementById('stat-create').textContent = allLogs.filter(l => l.action_type === 'CREATE').length;
+  document.getElementById('stat-update').textContent = allLogs.filter(l => l.action_type === 'UPDATE').length;
+  document.getElementById('stat-users').textContent = new Set(allLogs.map(l => l.user)).size;
+  renderLogs(allLogs);
+}).catch(() => {
+  document.getElementById('total-entries').textContent = '0';
+  document.getElementById('audit-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
+});
+
+function renderLogs(items) {
+  const tbody = document.getElementById('audit-tbody');
+  if (!items.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">No entries match filter</td></tr>'; return; }
+  const iconMap = { LAW_ENFORCEMENT_LOOKUP:{icon:'🔍',cls:'verified'}, CREATE:{icon:'➕',cls:'active'}, UPDATE:{icon:'✏️',cls:'pending'}, DELETE:{icon:'🗑️',cls:'rejected'} };
+  tbody.innerHTML = items.map(l => {
+    const {icon='📋',cls='pending'} = iconMap[l.action_type] || {};
+    return `<tr>
+      <td class="mono">#${String(l.id).padStart(5,'0')}</td>
+      <td>${l.user ? `User #${l.user}` : '<span style="color:#8896B0;">System</span>'}</td>
+      <td><span class="status-badge ${cls}">${icon} ${l.action_type.replace(/_/g,' ')}</span></td>
+      <td>${l.entity_type}</td>
+      <td class="mono">#${String(l.entity_id).padStart(4,'0')}</td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--text-muted);" title="${l.reason_code||''}">${l.reason_code||'—'}</td>
+      <td style="font-size:12px;">${formatDateTime(l.timestamp)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterLogs() {
+  const type = document.getElementById('filter-type').value;
+  renderLogs(type ? allLogs.filter(l => l.action_type === type) : allLogs);
+}
+</script>
+</body>
+</html>
