@@ -1,14 +1,13 @@
 // ── CIVIC-ID SHARED UTILITIES ──
-// All paths are absolute so they work whether served by Django
-// at http://127.0.0.1:8000/ or opened directly as a file.
 
 const AGENCY_LABELS = {
-  SUPER_ADMIN: 'System Administration',
-  REGISTRAR: 'Registrar Office',
-  DMV: 'DMV Office',
+  SUPER_ADMIN:     'System Administration',
+  REGISTRAR:       'Registrar Office',
+  DMV:             'DMV Office',
   LAW_ENFORCEMENT: 'Law Enforcement',
-  AUDITOR: 'Audit Division',
-  IMMIGRATION: 'Immigration Services',
+  AUDITOR:         'Audit Division',
+  IMMIGRATION:     'Immigration Services',
+  ELECTIONS:       'Elections Office',
 };
 
 const API_BASE = 'http://127.0.0.1:8000/api';
@@ -24,7 +23,7 @@ function logout() {
 
 function authHeaders() {
   return {
-    'Content-Type': 'application/json',
+    'Content-Type':  'application/json',
     'Authorization': `Bearer ${getToken()}`
   };
 }
@@ -46,15 +45,16 @@ function updateClock() {
 }
 
 // ── NAV MAPS ────────────────────────────────────────────────────
-// All hrefs are absolute Django URL paths (/pages/dashboard/ etc.)
 const NAV_LINKS = {
   SUPER_ADMIN: [
-    { href: '/pages/dashboard/',      label: 'Dashboard',       key: 'dashboard' },
-    { href: '/pages/persons/',        label: 'Persons',         key: 'persons' },
-    { href: '/pages/birth-records/',  label: 'Birth Records',   key: 'birth-records' },
-    { href: '/pages/id-applications/',label: 'ID Applications', key: 'id-applications' },
-    { href: '/pages/issued-ids/',     label: 'Issued IDs',      key: 'issued-ids' },
-    { href: '/pages/audit/',          label: 'Audit Logs',      key: 'audit' },
+    { href: '/pages/dashboard/',          label: 'Dashboard',           key: 'dashboard' },
+    { href: '/pages/persons/',            label: 'Persons',             key: 'persons' },
+    { href: '/pages/birth-records/',      label: 'Birth Records',       key: 'birth-records' },
+    { href: '/pages/id-applications/',    label: 'ID Applications',     key: 'id-applications' },
+    { href: '/pages/issued-ids/',         label: 'Issued IDs',          key: 'issued-ids' },
+    { href: '/pages/voter-registration/', label: 'Voter Registration',  key: 'voter-registration' },
+    { href: '/pages/audit/',              label: 'Audit Logs',          key: 'audit' },
+    { href: '/pages/administration/',     label: 'Administration',      key: 'administration' },
   ],
   REGISTRAR: [
     { href: '/pages/dashboard/',     label: 'Dashboard',     key: 'dashboard' },
@@ -79,9 +79,14 @@ const NAV_LINKS = {
     { href: '/pages/immigration/', label: 'Immigration Status', key: 'immigration' },
     { href: '/pages/persons/',     label: 'Persons',            key: 'persons' },
   ],
+  ELECTIONS: [
+    { href: '/pages/voter-registration/', label: 'Voter Registration', key: 'voter-registration' },
+    { href: '/pages/persons/',            label: 'Persons',            key: 'persons' },
+    { href: '/pages/audit/',              label: 'Audit Logs',         key: 'audit' },
+  ],
 };
 
-// ── HEADER INJECTION ────────────────────────────────────────────
+// ── HEADER INJECTION ─────────────────────────────────────────────
 function injectHeader(activePage) {
   const agency      = getAgency();
   const username    = getUsername();
@@ -115,7 +120,7 @@ function injectHeader(activePage) {
       </div>
     </header>
     <nav style="background:#003080;border-bottom:1px solid rgba(201,168,76,0.3);">
-      <div style="max-width:1400px;margin:0 auto;padding:0 32px;display:flex;gap:4px;">
+      <div style="max-width:1400px;margin:0 auto;padding:0 32px;display:flex;gap:4px;flex-wrap:wrap;">
         ${links.map(l => `
           <a href="${l.href}" style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:${activePage===l.key?'white':'rgba(255,255,255,0.65)'};text-decoration:none;padding:12px 16px;display:block;border-bottom:3px solid ${activePage===l.key?'#C9A84C':'transparent'};background:${activePage===l.key?'rgba(255,255,255,0.08)':'transparent'};transition:all 0.2s;">
             ${l.label}
@@ -128,7 +133,7 @@ function injectHeader(activePage) {
   updateClock();
 }
 
-// ── HELPERS ─────────────────────────────────────────────────────
+// ── HELPERS ──────────────────────────────────────────────────────
 function formatDate(dateStr) {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -147,6 +152,8 @@ function statusBadge(status) {
     ISSUED: 'verified', UNDER_REVIEW: 'pending', EXPIRED: 'rejected',
     REPLACED: 'revoked', DENIED: 'rejected', CITIZEN: 'verified',
     PERMANENT_RESIDENT: 'active', VISA_HOLDER: 'pending',
+    INACTIVE: 'pending', SUSPENDED: 'rejected', INELIGIBLE: 'rejected',
+    RESTORED: 'active',
   };
   const cls = map[status] || 'pending';
   return `<span class="status-badge ${cls}">${status.replace(/_/g, ' ')}</span>`;

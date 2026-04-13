@@ -20,10 +20,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Third-party apps
+    # Third-party
     "rest_framework",
     "corsheaders",
 
+    # CivicID apps
     "apps.accounts",
     "apps.persons",
     "apps.birth_records",
@@ -33,6 +34,7 @@ INSTALLED_APPS = [
     "apps.issued_ids",
     "apps.audit",
     "apps.law_enforcement",
+    "apps.voter_registration",
 ]
 
 MIDDLEWARE = [
@@ -64,7 +66,6 @@ ROOT_URLCONF = 'civicid.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # Tell Django to look inside templates/civicid-frontend/ for HTML files
         'DIRS': [BASE_DIR / 'templates' / 'civicid-frontend'],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -94,19 +95,17 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
-USE_I18N = True
-USE_TZ = True
+TIME_ZONE     = 'UTC'
+USE_I18N      = True
+USE_TZ        = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Static files
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'templates' / 'civicid-frontend' / 'css',
     BASE_DIR / 'templates' / 'civicid-frontend' / 'js',
 ]
 
-# Media files (user-uploaded / logo images)
-MEDIA_URL = '/media/'
+MEDIA_URL  = '/media/'
 MEDIA_ROOT = BASE_DIR / 'templates' / 'civicid-frontend' / 'media'
