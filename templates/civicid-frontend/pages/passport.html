@@ -151,7 +151,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-passport me-2"></i>Issue New Passport</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div id="issueAlert" class="alert d-none"></div>
@@ -166,7 +166,7 @@
           </div>
           <div class="col-md-6">
             <label class="form-label">Passport Type</label>
-            <select class="form-select" id="inPassportType">
+            <select class="form-select" id="inPassportType" aria-label="Passport Type">
               <option value="REGULAR">Regular</option>
               <option value="OFFICIAL">Official</option>
               <option value="DIPLOMATIC">Diplomatic</option>
@@ -178,11 +178,11 @@
           </div>
           <div class="col-md-6">
             <label class="form-label">Issue Date <span class="text-danger">*</span></label>
-            <input type="date" class="form-control" id="inIssueDate"/>
+            <input type="date" class="form-control" id="inIssueDate" aria-label="Issue Date"/>
           </div>
           <div class="col-md-6">
             <label class="form-label">Expiration Date <span class="text-danger">*</span></label>
-            <input type="date" class="form-control" id="inExpirationDate"/>
+            <input type="date" class="form-control" id="inExpirationDate" aria-label="Expiration Date"/>
           </div>
           <div class="col-12">
             <label class="form-label">Notes</label>
@@ -206,13 +206,13 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Update Passport Status</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div id="statusAlert" class="alert d-none"></div>
         <p class="text-muted small mb-3">Passport: <strong id="statusPassportNum"></strong></p>
         <label class="form-label">New Status</label>
-        <select class="form-select" id="newStatus">
+        <select class="form-select" id="newStatus" aria-label="New Passport Status">
           <option value="ACTIVE">Active</option>
           <option value="EXPIRED">Expired</option>
           <option value="REVOKED">Revoked</option>
