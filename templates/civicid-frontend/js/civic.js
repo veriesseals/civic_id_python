@@ -8,6 +8,7 @@ const AGENCY_LABELS = {
   AUDITOR:         'Audit Division',
   IMMIGRATION:     'Immigration Services',
   ELECTIONS:       'Elections Office',
+  STATE_DEPT:      'State Department',   // ← added
 };
 
 const API_BASE = 'http://127.0.0.1:8000/api';
@@ -53,6 +54,7 @@ const NAV_LINKS = {
     { href: '/pages/id-applications/',    label: 'ID Applications',     key: 'id-applications' },
     { href: '/pages/issued-ids/',         label: 'Issued IDs',          key: 'issued-ids' },
     { href: '/pages/voter-registration/', label: 'Voter Registration',  key: 'voter-registration' },
+    { href: '/pages/passport/',           label: 'Passports',           key: 'passport' },
     { href: '/pages/audit/',              label: 'Audit Logs',          key: 'audit' },
     { href: '/pages/administration/',     label: 'Administration',      key: 'administration' },
   ],
@@ -83,6 +85,10 @@ const NAV_LINKS = {
     { href: '/pages/voter-registration/', label: 'Voter Registration', key: 'voter-registration' },
     { href: '/pages/persons/',            label: 'Persons',            key: 'persons' },
     { href: '/pages/audit/',              label: 'Audit Logs',         key: 'audit' },
+  ],
+  STATE_DEPT: [                                                    // ← fixed: was a string, now an array
+    { href: '/pages/passport/', label: 'Passport Registry', key: 'passport' },
+    { href: '/pages/persons/',  label: 'Person Lookup',     key: 'persons' },
   ],
 };
 
