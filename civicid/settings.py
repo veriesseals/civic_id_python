@@ -1,5 +1,6 @@
 from pathlib import Path
 from celery.schedules import crontab
+from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -67,6 +68,12 @@ REST_FRAMEWORK = {
 CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'civicid.urls'
+
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=8),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}
 
 TEMPLATES = [
     {

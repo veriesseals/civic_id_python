@@ -4,118 +4,326 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CivicID — Law Enforcement Verification</title>
+
+  <!-- Bootstrap CSS for grid and modal utilities -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <!-- Google Fonts — matches the rest of the CivicID frontend -->
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Shared CivicID stylesheet -->
   <link href="/static/styles.css" rel="stylesheet" />
+
   <style>
-    .result-panel { background:white;border:2px solid var(--cobalt);border-radius:6px;overflow:hidden;box-shadow:var(--shadow-blue);display:none; }
-    .result-header { background:var(--cobalt);padding:16px 24px;display:flex;align-items:center;justify-content:space-between; }
-    .result-header h3 { font-family:var(--font-display);font-size:14px;letter-spacing:2px;text-transform:uppercase;color:white; }
-    .result-classified { background:var(--gold);color:var(--cobalt-deeper);font-family:var(--font-display);font-size:10px;font-weight:600;letter-spacing:2px;padding:4px 12px;border-radius:2px; }
-    .result-body { padding:28px; }
-    .result-field { display:flex;flex-direction:column;margin-bottom:20px; }
-    .result-field-label { font-family:var(--font-display);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px; }
-    .result-field-value { font-size:16px;font-weight:600;color:var(--text-dark);padding:10px 0;border-bottom:1px solid var(--light-gray); }
-    .verify-form { background:white;border:1px solid var(--light-gray);border-left:4px solid var(--danger);border-radius:4px;box-shadow:var(--shadow-sm); }
-    .verify-form-header { background:var(--cobalt-deeper);padding:16px 24px;border-bottom:2px solid var(--danger); }
-    .verify-form-header h2 { font-family:var(--font-display);font-size:14px;letter-spacing:2px;color:white;text-transform:uppercase; }
-    .required-tag { background:var(--danger);color:white;font-size:9px;font-family:var(--font-display);letter-spacing:1px;padding:2px 7px;border-radius:2px; }
+    /* ── RESULT PANEL ─────────────────────────────────────────────
+       Hidden by default; shown after a successful lookup.
+       Uses a cobalt border and box-shadow to draw the eye.
+    ── */
+    .result-panel {
+      background: white;
+      border: 2px solid var(--cobalt);
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: var(--shadow-blue);
+      display: none; /* toggled to block by showResult() */
+    }
+
+    .result-header {
+      background: var(--cobalt);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .result-header h3 {
+      font-family: var(--font-display);
+      font-size: 14px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: white;
+      margin: 0;
+    }
+
+    /* Gold "CLASSIFIED" badge on the result panel header */
+    .result-classified {
+      background: var(--gold);
+      color: var(--cobalt-deeper);
+      font-family: var(--font-display);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      padding: 4px 12px;
+      border-radius: 2px;
+    }
+
+    .result-body { padding: 28px; }
+
+    /* Individual data rows inside the result panel */
+    .result-field { display: flex; flex-direction: column; margin-bottom: 20px; }
+
+    .result-field-label {
+      font-family: var(--font-display);
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .result-field-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-dark);
+      padding: 10px 0;
+      border-bottom: 1px solid var(--light-gray);
+    }
+
+    /* ── VERIFY FORM ──────────────────────────────────────────────
+       Left-column card with a red left-border to signal
+       that this is a sensitive, access-controlled action.
+    ── */
+    .verify-form {
+      background: white;
+      border: 1px solid var(--light-gray);
+      border-left: 4px solid var(--danger);
+      border-radius: 4px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .verify-form-header {
+      background: var(--cobalt-deeper);
+      padding: 16px 24px;
+      border-bottom: 2px solid var(--danger);
+    }
+
+    .verify-form-header h2 {
+      font-family: var(--font-display);
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: white;
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    /* Small red "REQUIRED" pill shown next to field labels */
+    .required-tag {
+      background: var(--danger);
+      color: white;
+      font-size: 9px;
+      font-family: var(--font-display);
+      letter-spacing: 1px;
+      padding: 2px 7px;
+      border-radius: 2px;
+    }
   </style>
 </head>
 <body>
+
+<!-- ── SHARED HEADER + NAV ─────────────────────────────────────────
+     civic.js injects the classification bar, site header, and
+     role-gated navigation. 'law-enforcement' marks the active tab.
+── -->
 <script src="/static/civic.js"></script>
 <script>injectHeader('law-enforcement');</script>
 
 <div class="page-container">
+
+  <!-- ── PAGE HERO ───────────────────────────────────────────────
+       Red left-border signals this is a restricted portal.
+       Hero-meta shows the role and access level at a glance.
+  ── -->
   <div class="page-hero" style="border-left-color: var(--danger);">
     <div>
       <h1><i class="bi bi-shield-lock me-2"></i>Law Enforcement Identity Verification</h1>
-      <p>Privacy-first identity lookup — reason required — all lookups are audit logged</p>
+      <p>Privacy-first identity lookup — reason required — all lookups are permanently audit logged</p>
     </div>
-    <div class="hero-meta" style="color:rgba(255,255,255,0.7);">
-      <div style="color:#FF8A80;font-size:11px;letter-spacing:1px;">⚠ RESTRICTED ACCESS</div>
-      <div style="margin-top:4px;font-size:11px;">LAW ENFORCEMENT PORTAL</div>
+    <div class="hero-meta" style="color: rgba(255,255,255,0.7);">
+      <div style="color: #FF8A80; font-size: 11px; letter-spacing: 1px;">⚠ RESTRICTED ACCESS</div>
+      <div style="margin-top: 4px; font-size: 11px;">LAW ENFORCEMENT PORTAL</div>
     </div>
   </div>
 
+  <!-- ── LEGAL NOTICE BANNER ──────────────────────────────────── -->
   <div class="alert-banner warning mb-4">
-    <i class="bi bi-exclamation-triangle-fill" style="font-size:18px;flex-shrink:0;color:var(--gold);"></i>
-    <div><strong>Notice:</strong> Only minimum necessary information will be returned. Every lookup is permanently logged. Unauthorized lookups may result in disciplinary action.</div>
+    <i class="bi bi-exclamation-triangle-fill" style="font-size: 18px; flex-shrink: 0; color: var(--gold);"></i>
+    <div>
+      <strong>Notice:</strong> Only minimum necessary information will be returned.
+      Every lookup is permanently logged to the audit trail.
+      Unauthorized lookups may result in disciplinary action per 18 U.S.C. § 2709.
+    </div>
   </div>
 
   <div class="row g-4">
+
+    <!-- ── LEFT COLUMN: LOOKUP FORM ──────────────────────────── -->
     <div class="col-lg-5">
       <div class="verify-form">
         <div class="verify-form-header">
           <h2><i class="bi bi-search me-2"></i>Identity Lookup Request</h2>
         </div>
-        <div style="padding:24px;">
+
+        <div style="padding: 24px;">
+
+          <!-- Person ID input -->
           <div class="mb-3">
-            <label class="form-label">Person ID <span class="required-tag">REQUIRED</span></label>
-            <input type="number" class="form-control-gov" id="person-id" placeholder="Enter Person Record ID (e.g. 1)" />
+            <label class="form-label">
+              Person ID <span class="required-tag">REQUIRED</span>
+            </label>
+            <input
+              type="number"
+              class="form-control-gov"
+              id="person-id"
+              placeholder="Enter Person Record ID (e.g. 1)"
+            />
           </div>
+
+          <!-- Reason textarea — required by the LE permission design -->
           <div class="mb-4">
-            <label class="form-label">Reason for Lookup <span class="required-tag">REQUIRED</span></label>
-            <textarea class="form-control-gov" id="lookup-reason" rows="4" placeholder="e.g. Suspect in active investigation — Case #2026-0847." style="resize:vertical;"></textarea>
+            <label class="form-label">
+              Reason for Lookup <span class="required-tag">REQUIRED</span>
+            </label>
+            <textarea
+              class="form-control-gov"
+              id="lookup-reason"
+              rows="4"
+              placeholder="e.g. Suspect in active investigation — Case #2026-0847."
+              style="resize: vertical;"
+            ></textarea>
           </div>
-          <div class="alert-banner info mb-3" style="font-size:12px;">
+
+          <!-- Privacy reminder -->
+          <div class="alert-banner info mb-3" style="font-size: 12px;">
             <i class="bi bi-shield-check"></i>
             Only 5 fields returned: Name, DOB, and Citizenship Status
           </div>
-          <button class="btn-primary" style="width:100%;padding:13px;" onclick="doLookup()" id="lookup-btn">
+
+          <!-- Submit button — disabled while request is in-flight -->
+          <button
+            class="btn-primary"
+            style="width: 100%; padding: 13px;"
+            onclick="doLookup()"
+            id="lookup-btn"
+          >
             <i class="bi bi-search me-2"></i>Submit Verification Request
           </button>
-          <div id="lookup-error" style="display:none;margin-top:12px;" class="alert-banner danger">
+
+          <!-- Error banner — hidden until a lookup fails -->
+          <div id="lookup-error" style="display: none; margin-top: 12px;" class="alert-banner danger">
             <i class="bi bi-exclamation-triangle"></i>
             <span id="lookup-error-msg">Error</span>
           </div>
-        </div>
-      </div>
-    </div>
 
+        </div>
+      </div><!-- /.verify-form -->
+    </div><!-- /.col-lg-5 -->
+
+    <!-- ── RIGHT COLUMN: RESULT + EMPTY STATE + HISTORY ─────── -->
     <div class="col-lg-7">
+
+      <!-- RESULT PANEL — hidden until a successful lookup -->
       <div class="result-panel" id="resultPanel">
         <div class="result-header">
           <h3><i class="bi bi-person-badge me-2"></i>Identity Verification Result</h3>
           <span class="result-classified">MINIMAL DATA — PRIVACY PROTECTED</span>
         </div>
         <div class="result-body">
+
+          <!-- Audit-log confirmation row -->
           <div style="background:#E8F5E9;border:1px solid #A5D6A7;border-radius:3px;padding:10px 16px;margin-bottom:20px;font-size:13px;color:#1A6B3C;">
-            <i class="bi bi-check-circle me-2"></i>Lookup completed — Logged to audit trail — <strong id="result-timestamp">—</strong>
+            <i class="bi bi-check-circle me-2"></i>
+            Lookup completed — Logged to audit trail —
+            <strong id="result-timestamp">—</strong>
           </div>
+
+          <!-- The 5 privacy-minimum fields returned by the API -->
           <div class="row">
-            <div class="col-md-6"><div class="result-field"><div class="result-field-label">First Name</div><div class="result-field-value" id="r-first-name">—</div></div></div>
-            <div class="col-md-6"><div class="result-field"><div class="result-field-label">Last Name</div><div class="result-field-value" id="r-last-name">—</div></div></div>
-            <div class="col-md-6"><div class="result-field"><div class="result-field-label">Date of Birth</div><div class="result-field-value" id="r-dob">—</div></div></div>
-            <div class="col-md-6"><div class="result-field"><div class="result-field-label">Citizenship Status</div><div class="result-field-value" id="r-citizenship">—</div></div></div>
-            <div class="col-12"><div class="result-field"><div class="result-field-label">Record ID</div><div class="result-field-value mono" id="r-id">—</div></div></div>
+            <div class="col-md-6">
+              <div class="result-field">
+                <div class="result-field-label">First Name</div>
+                <div class="result-field-value" id="r-first-name">—</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="result-field">
+                <div class="result-field-label">Last Name</div>
+                <div class="result-field-value" id="r-last-name">—</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="result-field">
+                <div class="result-field-label">Date of Birth</div>
+                <div class="result-field-value" id="r-dob">—</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="result-field">
+                <div class="result-field-label">Citizenship Status</div>
+                <div class="result-field-value" id="r-citizenship">—</div>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="result-field">
+                <div class="result-field-label">Record ID</div>
+                <div class="result-field-value mono" id="r-id">—</div>
+              </div>
+            </div>
           </div>
+
+          <!-- Footer note inside the result panel -->
           <div style="background:#FFF8E1;border:1px solid var(--gold);border-radius:3px;padding:12px 16px;margin-top:8px;font-size:12px;color:#7B5800;">
-            <i class="bi bi-info-circle me-2"></i>Additional records require separate authorization. This lookup has been permanently recorded.
+            <i class="bi bi-info-circle me-2"></i>
+            Additional records require separate authorization.
+            This lookup has been permanently recorded.
           </div>
+
+        </div>
+      </div><!-- /#resultPanel -->
+
+      <!-- EMPTY STATE — shown before any lookup is submitted -->
+      <div
+        id="emptyState"
+        style="background:white;border:1px solid var(--light-gray);border-radius:4px;padding:48px;text-align:center;color:var(--text-muted);"
+      >
+        <i class="bi bi-shield-lock" style="font-size:48px;color:var(--mid-gray);display:block;margin-bottom:16px;"></i>
+        <div style="font-family:var(--font-display);font-size:14px;letter-spacing:1px;color:var(--cobalt-dark);">
+          AWAITING VERIFICATION REQUEST
+        </div>
+        <div style="font-size:13px;margin-top:8px;">
+          Enter a Person ID and reason, then submit to retrieve identity data.
         </div>
       </div>
 
-      <div id="emptyState" style="background:white;border:1px solid var(--light-gray);border-radius:4px;padding:48px;text-align:center;color:var(--text-muted);">
-        <i class="bi bi-shield-lock" style="font-size:48px;color:var(--mid-gray);display:block;margin-bottom:16px;"></i>
-        <div style="font-family:var(--font-display);font-size:14px;letter-spacing:1px;color:var(--cobalt-dark);">AWAITING VERIFICATION REQUEST</div>
-        <div style="font-size:13px;margin-top:8px;">Enter a Person ID and reason, then submit to retrieve identity data.</div>
-      </div>
-
+      <!-- LOOKUP HISTORY TABLE -->
       <div class="data-table-wrapper mt-4">
-        <div class="table-header"><h2><i class="bi bi-clock-history me-2"></i>My Lookup History</h2></div>
+        <div class="table-header">
+          <h2><i class="bi bi-clock-history me-2"></i>My Lookup History</h2>
+        </div>
         <table class="data-table">
-          <thead><tr><th>Request ID</th><th>Person</th><th>Reason</th><th>Status</th><th>Date/Time</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>Person</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Date / Time</th>
+            </tr>
+          </thead>
           <tbody id="history-tbody">
-            <tr><td colspan="5" style="text-align:center;padding:24px;color:#8896B0;">Loading history...</td></tr>
+            <tr>
+              <td colspan="5" style="text-align:center;padding:24px;color:#8896B0;">
+                Loading history...
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
-    </div>
-  </div>
-</div>
 
+    </div><!-- /.col-lg-7 -->
+  </div><!-- /.row -->
+</div><!-- /.page-container -->
+
+<!-- ── FOOTER ──────────────────────────────────────────────────── -->
 <footer class="site-footer">
   <div class="footer-inner">
     <p>CivicID v1.0 — Law Enforcement Portal</p>
@@ -124,58 +332,193 @@
   </div>
 </footer>
 
+<!-- Bootstrap JS (needed for any modal utilities on shared components) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
+// ── doLookup ────────────────────────────────────────────────────
+// Called when the officer clicks "Submit Verification Request".
+//
+// KEY FIX: Previously this function used the raw fetch() API and
+// built the Authorization header manually from localStorage.
+// That caused 403 errors when the JWT expired because the request
+// lacked the Django session cookie as a fallback.
+//
+// Now we use apiFetch() from civic.js which:
+//   1. Adds Authorization: Bearer <token> from localStorage
+//   2. Adds X-CSRFToken from the csrftoken cookie
+//   3. Sends credentials: 'same-origin' so Django session auth
+//      works as a fallback when the JWT is stale
+//   4. Throws on non-2xx responses (no need to check res.ok)
+// ────────────────────────────────────────────────────────────────
 function doLookup() {
   const personId = document.getElementById('person-id').value.trim();
   const reason   = document.getElementById('lookup-reason').value.trim();
   const errEl    = document.getElementById('lookup-error');
   const errMsg   = document.getElementById('lookup-error-msg');
+
+  // Reset any previous error state
   errEl.style.display = 'none';
-  if (!personId) { errMsg.textContent = 'Person ID is required.'; errEl.style.display = 'flex'; return; }
-  if (!reason || reason.length < 10) { errMsg.textContent = 'Please provide a detailed reason (minimum 10 characters).'; errEl.style.display = 'flex'; return; }
+
+  // ── Client-side validation ──────────────────────────────────
+  if (!personId) {
+    errMsg.textContent = 'Person ID is required.';
+    errEl.style.display = 'flex';
+    return;
+  }
+
+  if (!reason || reason.length < 10) {
+    errMsg.textContent = 'Please provide a detailed reason (minimum 10 characters).';
+    errEl.style.display = 'flex';
+    return;
+  }
+
+  // ── Disable button while request is in-flight ───────────────
   const btn = document.getElementById('lookup-btn');
-  btn.textContent = 'Submitting...'; btn.disabled = true;
-  fetch('http://127.0.0.1:8000/api/law-enforcement/verify/', {
+  btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Submitting...';
+  btn.disabled = true;
+
+  // ── API call via apiFetch ───────────────────────────────────
+  // apiFetch prepends API_BASE ('http://127.0.0.1:8000/api') so
+  // we only supply the path after /api/.
+  //
+  // The endpoint requires:
+  //   person  — integer Person record ID
+  //   reason  — string, minimum meaningful length
+  //
+  // On success Django returns a VerificationRequest object with
+  // a nested person_details object (MinimalPersonSerializer).
+  // On failure apiFetch throws an Error with the detail message.
+  apiFetch('/law-enforcement/verify/', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
-    body: JSON.stringify({ person: parseInt(personId), reason })
+    body: JSON.stringify({
+      person: parseInt(personId, 10),
+      reason: reason,
+    }),
   })
-  .then(res => { if (!res.ok) throw new Error(res.status); return res.json(); })
   .then(data => {
+    // ── Populate result panel ─────────────────────────────────
+    // data.person_details comes from MinimalPersonSerializer,
+    // which intentionally only exposes 5 fields (privacy-first).
     const p = data.person_details || {};
+
     document.getElementById('r-first-name').textContent = p.first_name || '—';
     document.getElementById('r-last-name').textContent  = p.last_name  || '—';
     document.getElementById('r-dob').textContent        = p.date_of_birth || '—';
+
+    // statusBadge() is a civic.js helper that renders a coloured pill
     document.getElementById('r-citizenship').innerHTML  = statusBadge(p.citizenship_status || 'UNKNOWN');
-    document.getElementById('r-id').textContent         = `#${String(p.id || data.person).padStart(4,'0')}`;
-    document.getElementById('result-timestamp').textContent = formatDateTime(data.requested_at || new Date().toISOString());
+
+    // Pad the record ID to 4 digits for consistent display
+    document.getElementById('r-id').textContent =
+      `#${String(p.id || data.person).padStart(4, '0')}`;
+
+    // formatDateTime() is a civic.js helper
+    document.getElementById('result-timestamp').textContent =
+      formatDateTime(data.requested_at || new Date().toISOString());
+
+    // Show the result panel, hide the empty-state placeholder
     document.getElementById('resultPanel').style.display = 'block';
     document.getElementById('emptyState').style.display  = 'none';
+
+    // Refresh the history table so this lookup appears immediately
     loadHistory();
   })
-  .catch(err => { errMsg.textContent = `Lookup failed (${err.message}).`; errEl.style.display = 'flex'; })
-  .finally(() => { btn.innerHTML = '<i class="bi bi-search me-2"></i>Submit Verification Request'; btn.disabled = false; });
+  .catch(err => {
+    // apiFetch already extracted the detail message from the
+    // JSON error body, so we can display it directly.
+    errMsg.textContent = `Lookup failed: ${err.message}`;
+    errEl.style.display = 'flex';
+  })
+  .finally(() => {
+    // Re-enable the submit button regardless of outcome
+    btn.innerHTML = '<i class="bi bi-search me-2"></i>Submit Verification Request';
+    btn.disabled  = false;
+  });
 }
 
+// ── loadHistory ─────────────────────────────────────────────────
+// Fetches only the current officer's own lookup history.
+// The backend enforces this: VerificationHistoryView filters by
+// requested_by=request.user so officers cannot see each other's
+// records — confirmed in apps/law_enforcement/views.py.
+//
+// KEY FIX: Previously used raw fetch() with a manual Authorization
+// header. Now uses apiFetch() for the same session-auth fallback
+// benefit as doLookup().
+// ────────────────────────────────────────────────────────────────
 function loadHistory() {
-  fetch('http://127.0.0.1:8000/api/law-enforcement/history/', { headers: { 'Authorization': `Bearer ${getToken()}` } })
-  .then(res => res.json())
+  apiFetch('/law-enforcement/history/')
   .then(data => {
     const items = Array.isArray(data) ? data : (data.results || []);
     const tbody = document.getElementById('history-tbody');
-    if (!items.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#8896B0;">No lookups recorded yet</td></tr>'; return; }
+
+    if (!items.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center;padding:24px;color:#8896B0;">
+            No lookups recorded yet
+          </td>
+        </tr>`;
+      return;
+    }
+
+    // Render one table row per verification request
     tbody.innerHTML = items.map(r => `
       <tr>
-        <td class="mono">#${String(r.id).padStart(4,'0')}</td>
-        <td>Person #${String(r.person||'—').padStart(4,'0')}</td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.reason}">${r.reason}</td>
+        <td class="mono">#${String(r.id).padStart(4, '0')}</td>
+        <td>Person #${String(r.person || '—').padStart(4, '0')}</td>
+
+        <!-- Truncate long reasons visually; full text available on hover -->
+        <td
+          style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+          title="${escapeHtml(r.reason)}"
+        >${escapeHtml(r.reason)}</td>
+
         <td>${statusBadge(r.status)}</td>
         <td>${formatDateTime(r.requested_at)}</td>
-      </tr>`).join('');
+      </tr>`
+    ).join('');
   })
-  .catch(() => { document.getElementById('history-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>'; });
+  .catch(() => {
+    // Non-fatal: just show a warning row if history fails to load
+    document.getElementById('history-tbody').innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center;padding:24px;color:#8896B0;">
+          <i class="bi bi-wifi-off me-2"></i>Could not load history
+        </td>
+      </tr>`;
+  });
 }
 
+// ── escapeHtml ──────────────────────────────────────────────────
+// Sanitises strings before injecting them into innerHTML to
+// prevent XSS. Required here because 'reason' is free-text
+// entered by an officer and stored verbatim in the database.
+// ────────────────────────────────────────────────────────────────
+function escapeHtml(str) {
+  if (!str) return '—';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// ── Allow Enter key to submit the form ──────────────────────────
+// Mirrors the UX pattern used on the login page (index.html).
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' &&
+      document.activeElement &&
+      ['person-id', 'lookup-reason'].includes(document.activeElement.id)) {
+    doLookup();
+  }
+});
+
+// ── Init ─────────────────────────────────────────────────────────
+// Load history on page open so the officer can see previous
+// lookups without having to submit a new one first.
 loadHistory();
 </script>
 </body>
