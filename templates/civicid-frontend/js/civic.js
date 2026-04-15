@@ -42,6 +42,16 @@ function updateClock() {
 
 // ── NAV MAPS ─────────────────────────────────────────────────────
 const NAV_LINKS = {
+  // ── CHANGE START ─────────────────────────────────────────────────
+  // WHAT WAS MISSING:
+  //   The SUPER_ADMIN nav list did not include the Immigration page.
+  //   Every other role that touches immigration had it, but SUPER_ADMIN
+  //   was the one role that should see ALL pages — and it was the one
+  //   that was missing it. Added:
+  //     { href: '/pages/immigration/', label: 'Immigration', key: 'immigration' }
+  //   inserted between 'Issued IDs' and 'Voter Reg' to keep the nav
+  //   in logical civic-lifecycle order.
+  // ── CHANGE END ───────────────────────────────────────────────────
   SUPER_ADMIN: [
     { href: '/pages/dashboard/',          label: 'Dashboard',         key: 'dashboard' },
     { href: '/pages/persons/',            label: 'Persons',           key: 'persons' },
@@ -50,6 +60,7 @@ const NAV_LINKS = {
     { href: '/pages/marriage/',           label: 'Marriage',          key: 'marriage' },
     { href: '/pages/id-applications/',    label: 'ID Applications',   key: 'id-applications' },
     { href: '/pages/issued-ids/',         label: 'Issued IDs',        key: 'issued-ids' },
+    { href: '/pages/immigration/',        label: 'Immigration',       key: 'immigration' },  // ← ADDED
     { href: '/pages/voter-registration/', label: 'Voter Reg',         key: 'voter-registration' },
     { href: '/pages/passport/',           label: 'Passports',         key: 'passport' },
     { href: '/pages/social-security/',    label: 'Social Security',   key: 'social-security' },
