@@ -1,8 +1,5 @@
-"""
-Django settings for civicid project.
-"""
-
 from pathlib import Path
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -27,6 +24,7 @@ INSTALLED_APPS = [
     # CivicID apps
     "apps.accounts",
     "apps.persons",
+    "apps.person_photos",
     "apps.birth_records",
     "apps.naturalization",
     "apps.immigration_status",
@@ -35,7 +33,12 @@ INSTALLED_APPS = [
     "apps.audit",
     "apps.law_enforcement",
     "apps.voter_registration",
-    "apps.passports", 
+    "apps.passports",
+    "apps.death_records",
+    "apps.marriage_certificates",
+    "apps.social_security",
+    "apps.selective_service",
+    "apps.civic_tasks",
 ]
 
 MIDDLEWARE = [
@@ -109,4 +112,23 @@ STATICFILES_DIRS = [
 ]
 
 MEDIA_URL  = '/media/'
-MEDIA_ROOT = BASE_DIR / 'templates' / 'civicid-frontend' / 'media'
+MEDIA_ROOT = BASE_DIR / 'media'   # Changed from templates/media to project root /media/
+
+# ── CELERY ───────────────────────────────────────────────────────
+CELERY_BROKER_URL        = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND    = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT    = ['json']
+CELERY_TASK_SERIALIZER   = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE          = 'UTC'
+
+CELERY_BEAT_SCHEDULE = {
+    'run-daily-civic-checks': {
+        'task': 'apps.civic_tasks.tasks.run_daily_civic_checks',
+        'schedule': crontab(hour=0, minute=0),   # Every day at midnight UTC
+    },
+    'deregister-selective-service-age-26': {
+        'task': 'apps.civic_tasks.tasks.deregister_selective_service_age_26',
+        'schedule': crontab(hour=0, minute=30),  # Daily at 00:30 UTC
+    },
+}
