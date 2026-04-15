@@ -21,5 +21,5 @@ class IsLawEnforcement(BasePermission):
             # Check if the user is authenticated
             # ----------------------------------------------
             request.user.is_authenticated and
-            request.user.role == "LAW_ENFORCEMENT"
+            request.user.role in ("LAW_ENFORCEMENT", "SUPER_ADMIN")
         )

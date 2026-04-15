@@ -12,14 +12,15 @@ class User(AbstractUser):
     # Define the different roles that a user can have in the system. This allows us to implement role-based access control, where different users have different permissions and access levels based on their assigned role.
     # ----------------------------------------------
     ROLE_CHOICES = [
-        ("SUPER_ADMIN", "Super Admin"),
-        ("REGISTRAR", "Registrar"),
-        ("DMV", "DMV"),
-        ("LAW_ENFORCEMENT", "Law Enforcement"),
-        ("AUDITOR", "Auditor"),
-        ("ELECTIONS", "Elections"),
-        ("STATE_DEPT", "State Department"),
-        ("SSA", "Social Security Administration"),
+    ("SUPER_ADMIN",     "Super Admin"),
+    ("REGISTRAR",       "Registrar"),
+    ("DMV",             "DMV"),
+    ("LAW_ENFORCEMENT", "Law Enforcement"),
+    ("AUDITOR",         "Auditor"),
+    ("ELECTIONS",       "Elections"),
+    ("STATE_DEPT",      "State Department"),
+    ("SSA",             "Social Security Administration"),
+    ("IMMIGRATION",     "Immigration Services"),   # ← ADD THIS
     ]
     
     # Define the role field to store the user's role in the system. This field uses the ROLE_CHOICES defined above to restrict the possible values and ensure that only valid roles can be assigned to users. The field is optional (blank=True, null=True) to allow for flexibility in user creation and management.

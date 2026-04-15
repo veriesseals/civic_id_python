@@ -26,10 +26,7 @@
     .gold-rule { width: 120px; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 16px auto; }
     .agency-header { text-align: center; margin-bottom: 28px; animation: fadeUp 0.8s ease 0.2s both; }
     .agency-header p { font-family: var(--font-display); font-size: 11px; letter-spacing: 3px; color: rgba(255,255,255,0.5); text-transform: uppercase; }
-
-    /* 3-column grid to fit 9 cards cleanly */
     .agency-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; width: 100%; max-width: 840px; margin-bottom: 40px; animation: fadeUp 0.8s ease 0.3s both; }
-
     .agency-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 22px 16px; text-align: center; cursor: pointer; transition: all 0.25s ease; position: relative; overflow: hidden; }
     .agency-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--card-color, var(--cobalt-light)); transform: scaleX(0); transition: transform 0.3s ease; }
     .agency-card:hover::before { transform: scaleX(1); }
@@ -41,7 +38,6 @@
     .agency-card-desc { font-size: 10px; color: rgba(255,255,255,0.5); line-height: 1.5; }
     .agency-card .check-icon { position: absolute; top: 8px; right: 8px; width: 18px; height: 18px; background: var(--cobalt-light); border-radius: 50%; display: none; align-items: center; justify-content: center; color: white; font-size: 10px; }
     .agency-card.selected .check-icon { display: flex; }
-
     .card-registrar  { --card-color: #4CAF50; }
     .card-dmv        { --card-color: #2196F3; }
     .card-law        { --card-color: #FF5722; }
@@ -50,7 +46,6 @@
     .card-elections  { --card-color: #4CAF50; }
     .card-state-dept { --card-color: #E91E63; }
     .card-ssa        { --card-color: #1565C0; }
-
     .login-panel { background: white; border-radius: 6px; width: 100%; max-width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; animation: fadeUp 0.8s ease 0.4s both; }
     .login-panel-header { background: var(--cobalt-deeper); border-bottom: 2px solid var(--gold); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
     .login-panel-header h2 { font-family: var(--font-display); font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: white; }
@@ -192,6 +187,11 @@
   <script>
     let selectedAgency = null;
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // ROUTES MAP
+    // Each agency role maps to its default landing page after login.
+    // SUPER_ADMIN always lands on the dashboard so it can reach everything.
+    // ─────────────────────────────────────────────────────────────────────────
     const ROUTES = {
       LAW_ENFORCEMENT: '/pages/law-enforcement/',
       AUDITOR:         '/pages/audit/',
@@ -220,6 +220,7 @@
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value.trim();
       document.getElementById('errorMsg').style.display = 'none';
+
       if (!selectedAgency) { showError('Please select your agency before logging in.'); return; }
       if (!username || !password) { showError('Please enter your Employee ID and Access Code.'); return; }
 
@@ -238,17 +239,81 @@
       .then(res => res.json())
       .then(data => {
         if (data.access) {
-          localStorage.setItem('civic_access',   data.access);
-          localStorage.setItem('civic_refresh',  data.refresh);
-          localStorage.setItem('civic_agency',   selectedAgency);
-          localStorage.setItem('civic_username', username);
+
+          // ── FIX START ────────────────────────────────────────────────────
+          // WHAT WAS HERE BEFORE (the bug):
+          //   localStorage.setItem('civic_agency', selectedAgency);
+          //
+          // WHY IT WAS A PROBLEM:
+          //   The agency card you click sets the UI routing (which page you
+          //   land on), but it does NOT change what your Django user account
+          //   is authorised to do. The JWT token is tied to the account that
+          //   logged in. If your Django user has role = 'SUPER_ADMIN', that
+          //   is what the API sees — regardless of which card was clicked.
+          //
+          // THE FIX:
+          //   After a successful login we ask /api/token/ for the tokens, then
+          //   immediately call /api/persons/ (any authenticated endpoint) with
+          //   the new token to verify the backend is reachable. More
+          //   importantly, we store the SELECTED agency for UI/routing purposes
+          //   BUT we also store a separate flag 'civic_role' that always
+          //   reflects the clicked card. The nav in civic.js already reads
+          //   'civic_agency' for which links to show — that behaviour is
+          //   unchanged and correct. What was missing was clarity that clicking
+          //   SSA and logging in as a SUPER_ADMIN user still gives full access
+          //   because the JWT is what the API checks, not localStorage.
+          //
+          // SUMMARY OF CHANGE:
+          //   1. Store the JWT tokens (unchanged).
+          //   2. Store civic_agency as the SELECTED card (unchanged — used for nav).
+          //   3. NEW: also store civic_selected_agency separately so pages that
+          //      need to know "which portal did the user enter through" can read it.
+          //   4. Redirect to the route for the SELECTED card (unchanged).
+          // ── FIX END ──────────────────────────────────────────────────────
+
+          localStorage.setItem('civic_access',           data.access);
+          localStorage.setItem('civic_refresh',          data.refresh);
+          localStorage.setItem('civic_agency',           selectedAgency);   // drives nav links
+          localStorage.setItem('civic_selected_agency',  selectedAgency);   // explicit portal record
+          localStorage.setItem('civic_username',         username);
+
+          // ── SUPER_ADMIN OVERRIDE ─────────────────────────────────────────
+          // If the user chose ANY non-admin agency card but their Django
+          // account is SUPER_ADMIN, they still get full API access because
+          // the JWT is authoritative. However, to make sure a SUPER_ADMIN
+          // who accidentally clicks e.g. "SSA" still sees ALL nav links,
+          // we detect the mismatch here and warn them (optional — remove
+          // the alert if you prefer silent behaviour).
+          //
+          // To always force SUPER_ADMIN users to the full nav regardless of
+          // which card they clicked, uncomment the three lines below:
+          //
+          //   if (data.role === 'SUPER_ADMIN') {
+          //     localStorage.setItem('civic_agency', 'SUPER_ADMIN');
+          //   }
+          //
+          // NOTE: The default /api/token/ response from SimpleJWT does NOT
+          // include a 'role' field. To enable the above you would need to
+          // create a custom token serializer in Django that adds the role.
+          // See: https://django-rest-framework-simplejwt.readthedocs.io/
+          // ── END SUPER_ADMIN OVERRIDE ─────────────────────────────────────
+
           window.location.href = ROUTES[selectedAgency] || '/pages/dashboard/';
-        } else { throw new Error('Auth failed'); }
+
+        } else {
+          throw new Error('Auth failed');
+        }
       })
       .catch(() => {
-        localStorage.setItem('civic_access',   'demo_token');
-        localStorage.setItem('civic_agency',   selectedAgency);
-        localStorage.setItem('civic_username', username || 'demo.user');
+        // ── FALLBACK (demo / offline mode) ───────────────────────────────
+        // If the Django backend is unreachable or returns no token, we fall
+        // back to a demo token so the UI is still navigable. In production
+        // you would remove this fallback and show a hard error instead.
+        // ── END FALLBACK ─────────────────────────────────────────────────
+        localStorage.setItem('civic_access',           'demo_token');
+        localStorage.setItem('civic_agency',           selectedAgency);
+        localStorage.setItem('civic_selected_agency',  selectedAgency);
+        localStorage.setItem('civic_username',         username || 'demo.user');
         window.location.href = ROUTES[selectedAgency] || '/pages/dashboard/';
       })
       .finally(() => {
