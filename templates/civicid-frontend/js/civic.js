@@ -1,124 +1,199 @@
-// ── CIVIC-ID SHARED UTILITIES ──
+// ── CIVIC-ID SHARED UTILITIES ─────────────────────────────────────
 
 const AGENCY_LABELS = {
-  SUPER_ADMIN:     'System Administration',
-  REGISTRAR:       'Registrar Office',
-  DMV:             'DMV Office',
+  SUPER_ADMIN: 'System Administration',
+  REGISTRAR: 'Registrar Office',
+  DMV: 'DMV Office',
   LAW_ENFORCEMENT: 'Law Enforcement',
-  AUDITOR:         'Audit Division',
-  IMMIGRATION:     'Immigration Services',
-  ELECTIONS:       'Elections Office',
-  STATE_DEPT:      'State Department',
-  SSA:             'Social Security Administration',
+  AUDITOR: 'Audit Division',
+  IMMIGRATION: 'Immigration Services',
+  ELECTIONS: 'Elections Office',
+  STATE_DEPT: 'State Department',
+  SSA: 'Social Security Administration',
 };
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
-function getToken()    { return localStorage.getItem('civic_access'); }
-function getAgency()   { return localStorage.getItem('civic_agency') || 'SUPER_ADMIN'; }
-function getUsername() { return localStorage.getItem('civic_username') || 'user'; }
+// ── AUTH / SESSION HELPERS ────────────────────────────────────────
 
-function logout() { localStorage.clear(); window.location.href = '/'; }
+function getToken() {
+  return localStorage.getItem('civic_access');
+}
 
-function authHeaders() {
-  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` };
+function getAgency() {
+  return localStorage.getItem('civic_agency') || 'SUPER_ADMIN';
+}
+
+function getUsername() {
+  return localStorage.getItem('civic_username') || 'user';
+}
+
+function logout() {
+  localStorage.clear();
+  window.location.href = '/';
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+
+      if (cookie.substring(0, name.length + 1) === `${name}=`) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+
+  return cookieValue;
+}
+
+function authHeaders(extraHeaders = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...extraHeaders,
+  };
+
+  const token = getToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const csrfToken = getCookie('csrftoken');
+  if (csrfToken) {
+    headers['X-CSRFToken'] = csrfToken;
+  }
+
+  return headers;
 }
 
 async function apiFetch(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${API_BASE}${path}`, {
+    credentials: 'same-origin',
     ...options,
-    headers: { ...authHeaders(), ...(options.headers || {}) }
+    headers: authHeaders(options.headers || {}),
   });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
+
+  if (!response.ok) {
+    let errorMessage = `API error: ${response.status}`;
+
+    try {
+      const errorData = await response.json();
+
+      if (errorData.detail) {
+        errorMessage = errorData.detail;
+      } else if (typeof errorData === 'object') {
+        errorMessage = JSON.stringify(errorData);
+      }
+    } catch (err) {
+      // Ignore JSON parse failure and keep fallback error message
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  return response.json();
 }
+
+// ── CLOCK ─────────────────────────────────────────────────────────
 
 function updateClock() {
   const el = document.getElementById('live-clock');
   if (!el) return;
+
   const now = new Date();
   el.textContent = now.toUTCString().split(' ').slice(4, 5)[0] + ' GMT';
 }
 
-// ── NAV MAPS ─────────────────────────────────────────────────────
+// ── NAV MAPS ──────────────────────────────────────────────────────
+
 const NAV_LINKS = {
-  // ── CHANGE START ─────────────────────────────────────────────────
-  // WHAT WAS MISSING:
-  //   The SUPER_ADMIN nav list did not include the Immigration page.
-  //   Every other role that touches immigration had it, but SUPER_ADMIN
-  //   was the one role that should see ALL pages — and it was the one
-  //   that was missing it. Added:
-  //     { href: '/pages/immigration/', label: 'Immigration', key: 'immigration' }
-  //   inserted between 'Issued IDs' and 'Voter Reg' to keep the nav
-  //   in logical civic-lifecycle order.
-  // ── CHANGE END ───────────────────────────────────────────────────
   SUPER_ADMIN: [
-    { href: '/pages/dashboard/',          label: 'Dashboard',         key: 'dashboard' },
-    { href: '/pages/persons/',            label: 'Persons',           key: 'persons' },
-    { href: '/pages/birth-records/',      label: 'Birth Records',     key: 'birth-records' },
-    { href: '/pages/death-records/',      label: 'Death Records',     key: 'death-records' },
-    { href: '/pages/marriage/',           label: 'Marriage',          key: 'marriage' },
-    { href: '/pages/id-applications/',    label: 'ID Applications',   key: 'id-applications' },
-    { href: '/pages/issued-ids/',         label: 'Issued IDs',        key: 'issued-ids' },
-    { href: '/pages/immigration/',        label: 'Immigration',       key: 'immigration' },  // ← ADDED
-    { href: '/pages/voter-registration/', label: 'Voter Reg',         key: 'voter-registration' },
-    { href: '/pages/passport/',           label: 'Passports',         key: 'passport' },
-    { href: '/pages/social-security/',    label: 'Social Security',   key: 'social-security' },
-    { href: '/pages/selective-service/',  label: 'Selective Service', key: 'selective-service' },
-    { href: '/pages/audit/',              label: 'Audit Logs',        key: 'audit' },
-    { href: '/pages/administration/',     label: 'Administration',    key: 'administration' },
+    { href: '/pages/dashboard/', label: 'Dashboard', key: 'dashboard' },
+    { href: '/pages/persons/', label: 'Persons', key: 'persons' },
+    { href: '/pages/birth-records/', label: 'Birth Records', key: 'birth-records' },
+    { href: '/pages/death-records/', label: 'Death Records', key: 'death-records' },
+    { href: '/pages/marriage/', label: 'Marriage', key: 'marriage' },
+    { href: '/pages/id-applications/', label: 'ID Applications', key: 'id-applications' },
+    { href: '/pages/issued-ids/', label: 'Issued IDs', key: 'issued-ids' },
+    { href: '/pages/immigration/', label: 'Immigration', key: 'immigration' },
+    { href: '/pages/voter-registration/', label: 'Voter Reg', key: 'voter-registration' },
+    { href: '/pages/passport/', label: 'Passports', key: 'passport' },
+    { href: '/pages/social-security/', label: 'Social Security', key: 'social-security' },
+    { href: '/pages/selective-service/', label: 'Selective Service', key: 'selective-service' },
+    { href: '/pages/audit/', label: 'Audit Logs', key: 'audit' },
+    { href: '/pages/administration/', label: 'Administration', key: 'administration' },
   ],
+
   REGISTRAR: [
-    { href: '/pages/dashboard/',         label: 'Dashboard',         key: 'dashboard' },
-    { href: '/pages/persons/',           label: 'Persons',           key: 'persons' },
-    { href: '/pages/birth-records/',     label: 'Birth Records',     key: 'birth-records' },
-    { href: '/pages/death-records/',     label: 'Death Records',     key: 'death-records' },
-    { href: '/pages/marriage/',          label: 'Marriage',          key: 'marriage' },
-    { href: '/pages/social-security/',   label: 'Social Security',   key: 'social-security' },
+    { href: '/pages/dashboard/', label: 'Dashboard', key: 'dashboard' },
+    { href: '/pages/persons/', label: 'Persons', key: 'persons' },
+    { href: '/pages/birth-records/', label: 'Birth Records', key: 'birth-records' },
+    { href: '/pages/death-records/', label: 'Death Records', key: 'death-records' },
+    { href: '/pages/marriage/', label: 'Marriage', key: 'marriage' },
+    { href: '/pages/social-security/', label: 'Social Security', key: 'social-security' },
     { href: '/pages/selective-service/', label: 'Selective Service', key: 'selective-service' },
   ],
+
   DMV: [
-    { href: '/pages/dashboard/',       label: 'Dashboard',       key: 'dashboard' },
+    { href: '/pages/dashboard/', label: 'Dashboard', key: 'dashboard' },
     { href: '/pages/id-applications/', label: 'ID Applications', key: 'id-applications' },
-    { href: '/pages/issued-ids/',      label: 'Issued IDs',      key: 'issued-ids' },
-    { href: '/pages/persons/',         label: 'Persons',         key: 'persons' },
+    { href: '/pages/issued-ids/', label: 'Issued IDs', key: 'issued-ids' },
+    { href: '/pages/persons/', label: 'Persons', key: 'persons' },
   ],
+
   LAW_ENFORCEMENT: [
-    { href: '/pages/law-enforcement/', label: 'Verify Identity',   key: 'law-enforcement' },
-    { href: '/pages/audit/',           label: 'My Lookup History', key: 'audit' },
+    { href: '/pages/law-enforcement/', label: 'Verify Identity', key: 'law-enforcement' },
+    { href: '/pages/audit/', label: 'My Lookup History', key: 'audit' },
   ],
+
   AUDITOR: [
-    { href: '/pages/audit/',     label: 'Audit Logs', key: 'audit' },
-    { href: '/pages/dashboard/', label: 'Dashboard',  key: 'dashboard' },
+    { href: '/pages/audit/', label: 'Audit Logs', key: 'audit' },
+    { href: '/pages/dashboard/', label: 'Dashboard', key: 'dashboard' },
   ],
+
   IMMIGRATION: [
     { href: '/pages/immigration/', label: 'Immigration Status', key: 'immigration' },
-    { href: '/pages/persons/',     label: 'Persons',            key: 'persons' },
+    { href: '/pages/persons/', label: 'Persons', key: 'persons' },
   ],
+
   ELECTIONS: [
     { href: '/pages/voter-registration/', label: 'Voter Registration', key: 'voter-registration' },
-    { href: '/pages/persons/',            label: 'Persons',            key: 'persons' },
-    { href: '/pages/audit/',              label: 'Audit Logs',         key: 'audit' },
+    { href: '/pages/persons/', label: 'Persons', key: 'persons' },
+    { href: '/pages/audit/', label: 'Audit Logs', key: 'audit' },
   ],
+
   STATE_DEPT: [
     { href: '/pages/passport/', label: 'Passport Registry', key: 'passport' },
-    { href: '/pages/persons/',  label: 'Person Lookup',     key: 'persons' },
+    { href: '/pages/persons/', label: 'Person Lookup', key: 'persons' },
   ],
+
   SSA: [
-    { href: '/pages/social-security/', label: 'SSN Registry',  key: 'social-security' },
-    { href: '/pages/persons/',         label: 'Person Lookup', key: 'persons' },
-    { href: '/pages/audit/',           label: 'Audit Logs',    key: 'audit' },
+    { href: '/pages/social-security/', label: 'SSN Registry', key: 'social-security' },
+    { href: '/pages/persons/', label: 'Person Lookup', key: 'persons' },
+    { href: '/pages/audit/', label: 'Audit Logs', key: 'audit' },
   ],
 };
 
-// ── HEADER INJECTION ─────────────────────────────────────────────
-function injectHeader(activePage) {
-  const agency      = getAgency();
-  const username    = getUsername();
-  const agencyLabel = AGENCY_LABELS[agency] || agency;
-  const links       = NAV_LINKS[agency] || NAV_LINKS.SUPER_ADMIN;
+// ── HEADER INJECTION ──────────────────────────────────────────────
 
-  document.body.insertAdjacentHTML('afterbegin', `
+function injectHeader(activePage) {
+  const agency = getAgency();
+  const username = getUsername();
+  const agencyLabel = AGENCY_LABELS[agency] || agency;
+  const links = NAV_LINKS[agency] || NAV_LINKS.SUPER_ADMIN;
+
+  document.body.insertAdjacentHTML(
+    'afterbegin',
+    `
     <div class="classification-bar">
       &#9733; &nbsp; UNITED STATES GOVERNMENT &mdash; AUTHORIZED ACCESS ONLY &nbsp; &#9733;
     </div>
@@ -146,116 +221,181 @@ function injectHeader(activePage) {
     </header>
     <nav class="site-nav">
       <div class="nav-inner">
-        ${links.map(l => `<a href="${l.href}" class="${activePage === l.key ? 'active' : ''}">${l.label}</a>`).join('')}
+        ${links
+          .map(
+            (l) =>
+              `<a href="${l.href}" class="${activePage === l.key ? 'active' : ''}">${l.label}</a>`
+          )
+          .join('')}
       </div>
     </nav>
-  `);
+    `
+  );
 
   setInterval(updateClock, 1000);
   updateClock();
 }
 
-// ── HELPERS ──────────────────────────────────────────────────────
+// ── DISPLAY HELPERS ───────────────────────────────────────────────
+
 function formatDate(dateStr) {
   if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 function formatDateTime(dateStr) {
   if (!dateStr) return '—';
+
   return new Date(dateStr).toLocaleString('en-US', {
-    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
 function statusBadge(status) {
   const map = {
-    ACTIVE:'active', PENDING:'pending', VERIFIED:'verified', REJECTED:'rejected',
-    REVOKED:'revoked', COMPLETED:'verified', DRAFT:'pending', SUBMITTED:'pending',
-    APPROVED:'active', ISSUED:'verified', UNDER_REVIEW:'pending', EXPIRED:'rejected',
-    REPLACED:'revoked', DENIED:'rejected', CITIZEN:'verified', PERMANENT_RESIDENT:'active',
-    VISA_HOLDER:'pending', INACTIVE:'pending', SUSPENDED:'rejected', INELIGIBLE:'rejected',
-    RESTORED:'active', DECEASED:'rejected', DEREGISTERED:'revoked', EXEMPT:'pending',
-    MALE:'verified', FEMALE:'active', OTHER:'pending',
-    NATURAL:'pending', ACCIDENT:'pending', HOMICIDE:'rejected', SUICIDE:'rejected',
-    UNDETERMINED:'pending', UNDOCUMENTED_ALIEN:'rejected',
+    ACTIVE: 'active',
+    PENDING: 'pending',
+    VERIFIED: 'verified',
+    REJECTED: 'rejected',
+    REVOKED: 'revoked',
+    COMPLETED: 'verified',
+    DRAFT: 'pending',
+    SUBMITTED: 'pending',
+    APPROVED: 'active',
+    ISSUED: 'verified',
+    UNDER_REVIEW: 'pending',
+    EXPIRED: 'rejected',
+    REPLACED: 'revoked',
+    DENIED: 'rejected',
+    CITIZEN: 'verified',
+    PERMANENT_RESIDENT: 'active',
+    VISA_HOLDER: 'pending',
+    INACTIVE: 'pending',
+    SUSPENDED: 'rejected',
+    INELIGIBLE: 'rejected',
+    RESTORED: 'active',
+    DECEASED: 'rejected',
+    DEREGISTERED: 'revoked',
+    EXEMPT: 'pending',
+    MALE: 'verified',
+    FEMALE: 'active',
+    OTHER: 'pending',
+    NATURAL: 'pending',
+    ACCIDENT: 'pending',
+    HOMICIDE: 'rejected',
+    SUICIDE: 'rejected',
+    UNDETERMINED: 'pending',
+    UNDOCUMENTED_ALIEN: 'rejected',
   };
+
   const cls = map[status] || 'pending';
-  return `<span class="status-badge ${cls}">${(status||'').replace(/_/g,' ')}</span>`;
+  return `<span class="status-badge ${cls}">${(status || '').replace(/_/g, ' ')}</span>`;
 }
 
-// ── SHARED PERSON EDIT MODAL ──────────────────────────────────────
+// ── SHARED PERSON EDIT MODAL LOGIC ────────────────────────────────
+
 let _editPersonId = null;
 
 function openEditModal(personId) {
   _editPersonId = personId;
-  apiFetch(`/persons/${personId}/`).then(p => {
-    const m = document.getElementById('editPersonModal');
-    if (!m) { alert('Edit modal not found on this page.'); return; }
-    m.querySelector('#edit-first').value       = p.first_name || '';
-    m.querySelector('#edit-middle').value      = p.middle_name || '';
-    m.querySelector('#edit-last').value        = p.last_name || '';
-    m.querySelector('#edit-gender').value      = p.gender || 'OTHER';
-    m.querySelector('#edit-dob').value         = p.date_of_birth || '';
-    m.querySelector('#edit-city').value        = p.place_of_birth_city || '';
-    m.querySelector('#edit-state').value       = p.place_of_birth_state || '';
-    m.querySelector('#edit-country').value     = p.place_of_birth_country || 'USA';
-    m.querySelector('#edit-citizenship').value = p.citizenship_status || 'CITIZEN';
-    m.querySelector('#edit-street').value      = p.address_street || '';
-    m.querySelector('#edit-addr-city').value   = p.address_city || '';
-    m.querySelector('#edit-addr-state').value  = p.address_state || '';
-    m.querySelector('#edit-addr-zip').value    = p.address_zip || '';
-    m.querySelector('#edit-reason').value      = '';
-    m.querySelector('#edit-person-error').style.display   = 'none';
-    m.querySelector('#edit-person-success').style.display = 'none';
-    new bootstrap.Modal(m).show();
-  });
+
+  apiFetch(`/persons/${personId}/`)
+    .then((p) => {
+      const m = document.getElementById('editPersonModal');
+      if (!m) {
+        alert('Edit modal not found on this page.');
+        return;
+      }
+
+      m.querySelector('#edit-first').value = p.first_name || '';
+      m.querySelector('#edit-middle').value = p.middle_name || '';
+      m.querySelector('#edit-last').value = p.last_name || '';
+      m.querySelector('#edit-gender').value = p.gender || 'OTHER';
+      m.querySelector('#edit-dob').value = p.date_of_birth || '';
+      m.querySelector('#edit-city').value = p.place_of_birth_city || '';
+      m.querySelector('#edit-state').value = p.place_of_birth_state || '';
+      m.querySelector('#edit-country').value = p.place_of_birth_country || 'USA';
+      m.querySelector('#edit-citizenship').value = p.citizenship_status || 'CITIZEN';
+      m.querySelector('#edit-street').value = p.address_street || '';
+      m.querySelector('#edit-addr-city').value = p.address_city || '';
+      m.querySelector('#edit-addr-state').value = p.address_state || '';
+      m.querySelector('#edit-addr-zip').value = p.address_zip || '';
+      m.querySelector('#edit-reason').value = '';
+      m.querySelector('#edit-person-error').style.display = 'none';
+      m.querySelector('#edit-person-success').style.display = 'none';
+
+      new bootstrap.Modal(m).show();
+    })
+    .catch((err) => {
+      alert(`Failed to load person: ${err.message}`);
+    });
 }
 
 function submitPersonEdit() {
   if (!_editPersonId) return;
+
   const m = document.getElementById('editPersonModal');
   const reason = m.querySelector('#edit-reason').value.trim();
+
   if (!reason) {
     m.querySelector('#edit-person-error').style.display = 'flex';
     m.querySelector('#edit-error-msg').textContent = 'A reason for the edit is required.';
     return;
   }
+
   const payload = {
-    first_name:             m.querySelector('#edit-first').value.trim(),
-    middle_name:            m.querySelector('#edit-middle').value.trim() || null,
-    last_name:              m.querySelector('#edit-last').value.trim() || null,
-    gender:                 m.querySelector('#edit-gender').value,
-    date_of_birth:          m.querySelector('#edit-dob').value,
-    place_of_birth_city:    m.querySelector('#edit-city').value.trim(),
-    place_of_birth_state:   m.querySelector('#edit-state').value.trim() || null,
+    first_name: m.querySelector('#edit-first').value.trim(),
+    middle_name: m.querySelector('#edit-middle').value.trim() || null,
+    last_name: m.querySelector('#edit-last').value.trim() || null,
+    gender: m.querySelector('#edit-gender').value,
+    date_of_birth: m.querySelector('#edit-dob').value,
+    place_of_birth_city: m.querySelector('#edit-city').value.trim(),
+    place_of_birth_state: m.querySelector('#edit-state').value.trim() || null,
     place_of_birth_country: m.querySelector('#edit-country').value.trim() || 'USA',
-    citizenship_status:     m.querySelector('#edit-citizenship').value,
-    address_street:         m.querySelector('#edit-street').value.trim() || null,
-    address_city:           m.querySelector('#edit-addr-city').value.trim() || null,
-    address_state:          m.querySelector('#edit-addr-state').value.trim() || null,
-    address_zip:            m.querySelector('#edit-addr-zip').value.trim() || null,
-    _edit_reason:           reason,
+    citizenship_status: m.querySelector('#edit-citizenship').value,
+    address_street: m.querySelector('#edit-street').value.trim() || null,
+    address_city: m.querySelector('#edit-addr-city').value.trim() || null,
+    address_state: m.querySelector('#edit-addr-state').value.trim() || null,
+    address_zip: m.querySelector('#edit-addr-zip').value.trim() || null,
+    _edit_reason: reason,
   };
-  apiFetch(`/persons/${_editPersonId}/`, { method: 'PATCH', body: JSON.stringify(payload) })
+
+  apiFetch(`/persons/${_editPersonId}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
     .then(() => {
-      m.querySelector('#edit-person-error').style.display   = 'none';
+      m.querySelector('#edit-person-error').style.display = 'none';
       m.querySelector('#edit-person-success').style.display = 'flex';
+
       setTimeout(() => {
         bootstrap.Modal.getInstance(m).hide();
+
         if (typeof loadPersons === 'function') loadPersons();
         if (typeof loadData === 'function') loadData();
       }, 1200);
     })
-    .catch(err => {
+    .catch((err) => {
       m.querySelector('#edit-person-error').style.display = 'flex';
       m.querySelector('#edit-error-msg').textContent = `Save failed: ${err.message}`;
     });
 }
 
-// ── SHARED EDIT MODAL HTML (inject into body) ─────────────────────
+// ── SHARED EDIT MODAL HTML ────────────────────────────────────────
+
 function injectEditModal() {
-  document.body.insertAdjacentHTML('beforeend', `
+  document.body.insertAdjacentHTML(
+    'beforeend',
+    `
   <div class="modal fade" id="editPersonModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
@@ -358,5 +498,6 @@ function injectEditModal() {
         </div>
       </div>
     </div>
-  </div>`);
+  </div>`
+  );
 }
