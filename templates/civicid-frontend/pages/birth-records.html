@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CivicID — Birth Records</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
@@ -12,35 +11,133 @@
 <body>
 <script src="/static/civic.js"></script>
 <script>injectHeader('birth-records');</script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <div class="page-container">
   <div class="page-hero">
-    <div>
-      <h1><i class="bi bi-clipboard-check me-2"></i>Birth Records</h1>
-      <p>Civil registration — birth certificates and verification status</p>
-    </div>
-    <div class="hero-meta">
-      TOTAL RECORDS: <span id="total-count" style="color:var(--gold-light);">Loading...</span>
-    </div>
+    <div><h1><i class="bi bi-clipboard-check me-2"></i>Birth Records</h1><p>Civil registration — birth certificates and verification status</p></div>
+    <div class="hero-meta">TOTAL: <span id="total-count" style="color:var(--gold-light);">Loading...</span></div>
   </div>
-
+  <div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="stat-card green"><div class="stat-label">Verified</div><div class="stat-value" id="stat-verified">0</div></div></div>
+    <div class="col-md-3"><div class="stat-card gold"><div class="stat-label">Pending</div><div class="stat-value" id="stat-pending">0</div></div></div>
+    <div class="col-md-3"><div class="stat-card red"><div class="stat-label">Rejected</div><div class="stat-value" id="stat-rejected">0</div></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-label">Total</div><div class="stat-value" id="stat-total">0</div></div></div>
+  </div>
   <div class="data-table-wrapper">
     <div class="table-header">
       <h2><i class="bi bi-clipboard me-2"></i>Birth Certificate Registry</h2>
       <div class="table-actions">
-        <a href="#" class="btn-primary btn-sm">+ New Record</a>
+        <select id="filter-status" onchange="filterRecords()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 10px;border-radius:3px;font-size:12px;">
+          <option value="">All Status</option><option value="PENDING">Pending</option>
+          <option value="VERIFIED">Verified</option><option value="REJECTED">Rejected</option>
+        </select>
+        <input type="text" id="search-input" placeholder="Search certificate #…" oninput="filterRecords()"
+          style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:3px;font-size:12px;" />
+        <button class="btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newRecordModal">
+          <i class="bi bi-plus-circle me-1"></i>New Record
+        </button>
       </div>
     </div>
     <table class="data-table">
-      <thead>
-        <tr>
-          <th>Certificate #</th><th>Person ID</th><th>Hospital</th><th>Registrar Office</th><th>Registration Date</th><th>Verification</th><th>Created</th>
-        </tr>
-      </thead>
-      <tbody id="records-tbody">
-        <tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">Loading records...</td></tr>
-      </tbody>
+      <thead><tr><th>Certificate #</th><th>Person</th><th>Gender</th><th>Hospital</th><th>Registrar Office</th><th>Reg Date</th><th>Verification</th><th>Created</th></tr></thead>
+      <tbody id="records-tbody"><tr><td colspan="8" style="text-align:center;padding:32px;color:#8896B0;">Loading records...</td></tr></tbody>
     </table>
+  </div>
+</div>
+
+<!-- NEW BIRTH RECORD MODAL -->
+<div class="modal fade" id="newRecordModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header" style="background:var(--cobalt-deeper);border-bottom:2px solid var(--gold);">
+        <h5 class="modal-title" style="font-family:var(--font-display);letter-spacing:2px;color:white;font-size:14px;">
+          <i class="bi bi-clipboard-plus me-2"></i>REGISTER NEW BIRTH CERTIFICATE
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:28px;">
+        <div class="alert-banner info mb-3" style="font-size:12px;">
+          <i class="bi bi-info-circle"></i>
+          Register a birth record for an <strong>existing Person</strong> in the system, or simultaneously create a new Person record.
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:20px;">
+          <button class="btn-primary btn-sm" id="tab-existing" onclick="switchTab('existing')">Use Existing Person</button>
+          <button class="btn-secondary btn-sm" id="tab-new" onclick="switchTab('new')">Create New Person</button>
+        </div>
+
+        <div id="panel-existing">
+          <div class="row g-3 mb-3">
+            <div class="col-md-5">
+              <label class="form-label">Person ID *</label>
+              <div style="display:flex;gap:8px;">
+                <input type="number" class="form-control-gov" id="br-person-id" placeholder="e.g. 1" style="flex:1;" />
+                <button class="btn-secondary btn-sm" onclick="lookupPerson()">Lookup</button>
+              </div>
+            </div>
+            <div class="col-md-7">
+              <div id="lookup-result" style="display:none;background:var(--off-white);border:1px solid var(--light-gray);border-radius:4px;padding:12px;font-size:13px;margin-top:26px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="panel-new" style="display:none;">
+          <div style="background:var(--off-white);border:1px solid var(--light-gray);border-radius:4px;padding:20px;margin-bottom:16px;">
+            <div style="font-family:var(--font-display);font-size:11px;letter-spacing:2px;color:var(--cobalt-dark);text-transform:uppercase;margin-bottom:12px;">New Person Details</div>
+            <div class="row g-3">
+              <div class="col-md-4"><label class="form-label">First Name *</label><input type="text" class="form-control-gov" id="np-first" /></div>
+              <div class="col-md-4"><label class="form-label">Middle Name</label><input type="text" class="form-control-gov" id="np-middle" /></div>
+              <div class="col-md-3"><label class="form-label">Last Name</label><input type="text" class="form-control-gov" id="np-last" /></div>
+              <div class="col-md-1"><label class="form-label">Suffix</label><input type="text" class="form-control-gov" id="np-suffix" /></div>
+              <div class="col-md-3">
+                <label class="form-label">Gender *</label>
+                <select class="form-control-gov" id="np-gender">
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other / Not Specified</option>
+                </select>
+              </div>
+              <div class="col-md-3"><label class="form-label">Date of Birth *</label><input type="date" class="form-control-gov" id="np-dob" /></div>
+              <div class="col-md-3">
+                <label class="form-label">Citizenship</label>
+                <select class="form-control-gov" id="np-citizenship">
+                  <option value="CITIZEN">Citizen</option>
+                  <option value="PERMANENT_RESIDENT">Permanent Resident</option>
+                  <option value="VISA_HOLDER">Visa Holder</option>
+                  <option value="UNDOCUMENTED_ALIEN">Undocumented Alien</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <div class="col-md-3"><label class="form-label">Maiden Name</label><input type="text" class="form-control-gov" id="np-maiden" /></div>
+              <div class="col-md-4"><label class="form-label">City of Birth *</label><input type="text" class="form-control-gov" id="np-city" /></div>
+              <div class="col-md-4"><label class="form-label">State of Birth</label><input type="text" class="form-control-gov" id="np-state" /></div>
+              <div class="col-md-4"><label class="form-label">Country</label><input type="text" class="form-control-gov" id="np-country" value="USA" /></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-family:var(--font-display);font-size:11px;letter-spacing:2px;color:var(--cobalt-dark);text-transform:uppercase;margin-bottom:12px;margin-top:8px;">Certificate Details</div>
+        <div class="row g-3">
+          <div class="col-md-4"><label class="form-label">Certificate Number *</label><input type="text" class="form-control-gov" id="br-cert-num" placeholder="BC-2026-000001" /></div>
+          <div class="col-md-4"><label class="form-label">Hospital Name *</label><input type="text" class="form-control-gov" id="br-hospital" placeholder="St. Mary's Medical Center" /></div>
+          <div class="col-md-4"><label class="form-label">Registrar Office *</label><input type="text" class="form-control-gov" id="br-office" placeholder="Denver County Vital Records" /></div>
+          <div class="col-md-4"><label class="form-label">Registration Date *</label><input type="date" class="form-control-gov" id="br-reg-date" /></div>
+          <div class="col-md-4">
+            <label class="form-label">Verification Status</label>
+            <select class="form-control-gov" id="br-status">
+              <option value="PENDING">Pending</option>
+              <option value="VERIFIED">Verified</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+          </div>
+        </div>
+        <div class="alert-banner danger mt-3" id="br-error" style="display:none;"><i class="bi bi-exclamation-triangle"></i><span id="br-error-msg"></span></div>
+        <div class="alert-banner info mt-3" id="br-success" style="display:none;"><i class="bi bi-check-circle"></i>Birth record registered successfully.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn-primary" onclick="submitBirthRecord()"><i class="bi bi-save me-1"></i>Register Birth Record</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -51,27 +148,133 @@
     <p>Birth records maintained per state vital statistics law</p>
   </div>
 </footer>
-
 <script>
-apiFetch('/birth-records/').then(data => {
-  const items = Array.isArray(data) ? data : (data.results || []);
-  document.getElementById('total-count').textContent = items.length;
-  const tbody = document.getElementById('records-tbody');
-  if (!items.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">No birth records found</td></tr>'; return; }
-  tbody.innerHTML = items.map(r => `
-    <tr>
-      <td class="mono">${r.certificate_number}</td>
-      <td class="mono">#${String(r.person).padStart(4,'0')}</td>
-      <td>${r.hospital_name}</td>
-      <td>${r.registrar_office}</td>
-      <td>${formatDate(r.registration_date)}</td>
-      <td>${statusBadge(r.verification_status)}</td>
-      <td>${formatDate(r.created_at)}</td>
-    </tr>`).join('');
-}).catch(() => {
-  document.getElementById('total-count').textContent = '0';
-  document.getElementById('records-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
+let allRecords=[], personMap={}, personTab='existing', resolvedPersonId=null;
+
+apiFetch('/persons/').then(d=>{(Array.isArray(d)?d:(d.results||[])).forEach(p=>{personMap[p.id]=p;});}).catch(()=>{});
+
+function switchTab(t){
+  personTab=t;
+  document.getElementById('panel-existing').style.display=t==='existing'?'block':'none';
+  document.getElementById('panel-new').style.display=t==='new'?'block':'none';
+  document.getElementById('tab-existing').className=t==='existing'?'btn-primary btn-sm':'btn-secondary btn-sm';
+  document.getElementById('tab-new').className=t==='new'?'btn-primary btn-sm':'btn-secondary btn-sm';
+  resolvedPersonId=null;
+}
+
+function lookupPerson(){
+  const pid=document.getElementById('br-person-id').value.trim();
+  const el=document.getElementById('lookup-result');
+  if(!pid)return;
+  el.style.display='block'; el.textContent='Searching…'; resolvedPersonId=null;
+  apiFetch('/persons/'+pid+'/').then(p=>{
+    resolvedPersonId=p.id;
+    const gi={MALE:'♂',FEMALE:'♀',OTHER:'⊕'};
+    el.innerHTML='<strong>#'+p.id+' — '+p.first_name+' '+(p.last_name||'')+'</strong>'
+      +' <span style="margin-left:10px;">'+(gi[p.gender]||'')+' '+(p.gender||'').replace(/_/g,' ')+'</span>'
+      +' <span style="margin-left:10px;color:var(--text-muted);">DOB: '+formatDate(p.date_of_birth)+'</span>'
+      +' <span class="status-badge verified" style="margin-left:10px;font-size:10px;">Found ✓</span>';
+  }).catch(()=>{el.innerHTML='<span style="color:var(--danger);">Person not found</span>';});
+}
+
+async function submitBirthRecord(){
+  const errEl=document.getElementById('br-error');
+  const sucEl=document.getElementById('br-success');
+  errEl.style.display='none'; sucEl.style.display='none';
+  let personId=null;
+  if(personTab==='existing'){
+    if(!resolvedPersonId){document.getElementById('br-error-msg').textContent='Look up a valid Person ID first.';errEl.style.display='flex';return;}
+    personId=resolvedPersonId;
+  } else {
+    const nb={
+      first_name:document.getElementById('np-first').value.trim(),
+      middle_name:document.getElementById('np-middle').value.trim()||null,
+      last_name:document.getElementById('np-last').value.trim()||null,
+      suffix:document.getElementById('np-suffix').value.trim()||null,
+      gender:document.getElementById('np-gender').value,
+      maiden_name:document.getElementById('np-maiden').value.trim()||null,
+      date_of_birth:document.getElementById('np-dob').value,
+      place_of_birth_city:document.getElementById('np-city').value.trim(),
+      place_of_birth_state:document.getElementById('np-state').value.trim()||null,
+      place_of_birth_country:document.getElementById('np-country').value.trim()||'USA',
+      citizenship_status:document.getElementById('np-citizenship').value,
+    };
+    if(!nb.first_name||!nb.date_of_birth||!nb.place_of_birth_city){
+      document.getElementById('br-error-msg').textContent='First name, DOB, and city required for new person.';
+      errEl.style.display='flex';return;
+    }
+    try{const np=await apiFetch('/persons/',{method:'POST',body:JSON.stringify(nb)});personId=np.id;}
+    catch(e){document.getElementById('br-error-msg').textContent='Could not create person: '+e.message;errEl.style.display='flex';return;}
+  }
+  const cert=document.getElementById('br-cert-num').value.trim();
+  const hosp=document.getElementById('br-hospital').value.trim();
+  const off=document.getElementById('br-office').value.trim();
+  const rd=document.getElementById('br-reg-date').value;
+  const st=document.getElementById('br-status').value;
+  if(!cert||!hosp||!off||!rd){document.getElementById('br-error-msg').textContent='All certificate fields required.';errEl.style.display='flex';return;}
+  try{
+    await apiFetch('/birth-records/',{method:'POST',body:JSON.stringify({
+      person:personId,certificate_number:cert,hospital_name:hosp,
+      registrar_office:off,registration_date:rd,verification_status:st
+    })});
+    sucEl.style.display='flex';
+    setTimeout(()=>{bootstrap.Modal.getInstance(document.getElementById('newRecordModal')).hide();loadRecords();},1400);
+  }catch(e){document.getElementById('br-error-msg').textContent='Failed: '+e.message;errEl.style.display='flex';}
+}
+
+function loadRecords(){
+  apiFetch('/birth-records/').then(data=>{
+    allRecords=Array.isArray(data)?data:(data.results||[]);
+    document.getElementById('total-count').textContent=allRecords.length;
+    document.getElementById('stat-verified').textContent=allRecords.filter(r=>r.verification_status==='VERIFIED').length;
+    document.getElementById('stat-pending').textContent=allRecords.filter(r=>r.verification_status==='PENDING').length;
+    document.getElementById('stat-rejected').textContent=allRecords.filter(r=>r.verification_status==='REJECTED').length;
+    document.getElementById('stat-total').textContent=allRecords.length;
+    renderRecords(allRecords);
+  }).catch(()=>{document.getElementById('total-count').textContent='0';
+    document.getElementById('records-tbody').innerHTML='<tr><td colspan="8" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
+  });
+}
+
+function renderRecords(items){
+  const tbody=document.getElementById('records-tbody');
+  if(!items.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:32px;color:#8896B0;">No birth records found</td></tr>';return;}
+  const gi={MALE:'♂ Male',FEMALE:'♀ Female',OTHER:'⊕ Other'};
+  tbody.innerHTML=items.map(r=>{
+    const p=personMap[r.person];
+    return '<tr>'
+      +'<td class="mono">'+r.certificate_number+'</td>'
+      +'<td>'+(p?'<strong>'+p.first_name+' '+(p.last_name||'')+'</strong>':'Person')
+        +' <span style="font-size:11px;color:var(--text-muted);">#'+String(r.person).padStart(4,'0')+'</span></td>'
+      +'<td style="font-size:13px;">'+(p?(gi[p.gender]||'—'):'—')+'</td>'
+      +'<td>'+r.hospital_name+'</td>'
+      +'<td>'+r.registrar_office+'</td>'
+      +'<td>'+formatDate(r.registration_date)+'</td>'
+      +'<td>'+statusBadge(r.verification_status)+'</td>'
+      +'<td>'+formatDate(r.created_at)+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+function filterRecords(){
+  const q=document.getElementById('search-input').value.toLowerCase();
+  const st=document.getElementById('filter-status').value;
+  renderRecords(allRecords.filter(r=>
+    (!q||r.certificate_number.toLowerCase().includes(q)||r.hospital_name.toLowerCase().includes(q))
+    &&(!st||r.verification_status===st)
+  ));
+}
+
+document.getElementById('newRecordModal').addEventListener('show.bs.modal',()=>{
+  document.getElementById('br-error').style.display='none';
+  document.getElementById('br-success').style.display='none';
+  document.getElementById('br-reg-date').value=new Date().toISOString().split('T')[0];
+  switchTab('existing');
+  resolvedPersonId=null;
+  document.getElementById('lookup-result').style.display='none';
 });
+
+loadRecords();
 </script>
 </body>
 </html>

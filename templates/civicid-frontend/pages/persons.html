@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CivicID — Persons Registry</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
@@ -11,7 +10,8 @@
 </head>
 <body>
 <script src="/static/civic.js"></script>
-<script>injectHeader('persons');</script>
+<script>injectHeader('persons'); injectEditModal();</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <div class="page-container">
   <div class="page-hero">
@@ -20,54 +20,56 @@
       <p>Central identity records — all registered individuals in the system</p>
     </div>
     <div class="hero-meta">
-      <div>TOTAL RECORDS: <span id="total-count" style="color:var(--gold-light);">Loading...</span></div>
+      TOTAL RECORDS: <span id="total-count" style="color:var(--gold-light);">Loading...</span>
     </div>
   </div>
 
+  <!-- ADD PERSON PANEL -->
   <div class="content-card mb-4" id="addPersonCard" style="display:none;">
     <div class="card-header" style="justify-content:space-between;">
       <h3><i class="bi bi-person-plus me-1"></i>Register New Person</h3>
-      <button onclick="document.getElementById('addPersonCard').style.display='none'" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;">&times;</button>
+      <button onclick="document.getElementById('addPersonCard').style.display='none'"
+        style="background:none;border:none;color:white;font-size:18px;cursor:pointer;">&times;</button>
     </div>
     <div class="card-body">
+      <div class="alert-banner info mb-3" style="font-size:12px;">
+        <i class="bi bi-shield-check"></i>
+        Only <strong>REGISTRAR</strong>, <strong>SUPER_ADMIN</strong>, and <strong>DMV</strong> roles may register new persons.
+        All entries are timestamped and attributed to your account.
+      </div>
       <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label">First Name *</label>
-          <input type="text" class="form-control-gov" id="new-first" placeholder="First name" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Middle Name</label>
-          <input type="text" class="form-control-gov" id="new-middle" placeholder="Middle name (optional)" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Last Name</label>
-          <input type="text" class="form-control-gov" id="new-last" placeholder="Last name" />
-        </div>
+        <div class="col-md-4"><label class="form-label">First Name *</label><input type="text" class="form-control-gov" id="new-first" placeholder="First name" /></div>
+        <div class="col-md-4"><label class="form-label">Middle Name</label><input type="text" class="form-control-gov" id="new-middle" placeholder="Optional" /></div>
+        <div class="col-md-3"><label class="form-label">Last Name</label><input type="text" class="form-control-gov" id="new-last" /></div>
+        <div class="col-md-1"><label class="form-label">Suffix</label><input type="text" class="form-control-gov" id="new-suffix" placeholder="Jr…" /></div>
         <div class="col-md-3">
-          <label class="form-label">Date of Birth *</label>
-          <input type="date" class="form-control-gov" id="new-dob" />
+          <label class="form-label">Gender *</label>
+          <select class="form-control-gov" id="new-gender">
+            <option value="MALE">Male</option>
+            <option value="FEMALE">Female</option>
+            <option value="OTHER">Other / Not Specified</option>
+          </select>
         </div>
+        <div class="col-md-3"><label class="form-label">Date of Birth *</label><input type="date" class="form-control-gov" id="new-dob" /></div>
         <div class="col-md-3">
-          <label class="form-label">City of Birth *</label>
-          <input type="text" class="form-control-gov" id="new-city" placeholder="City" />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">State of Birth</label>
-          <input type="text" class="form-control-gov" id="new-state" placeholder="State" />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Country of Birth</label>
-          <input type="text" class="form-control-gov" id="new-country" placeholder="USA" value="USA" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Citizenship Status *</label>
+          <label class="form-label">Citizenship *</label>
           <select class="form-control-gov" id="new-citizenship">
             <option value="CITIZEN">Citizen</option>
             <option value="PERMANENT_RESIDENT">Permanent Resident</option>
             <option value="VISA_HOLDER">Visa Holder</option>
+            <option value="UNDOCUMENTED_ALIEN">Undocumented Alien</option>
             <option value="OTHER">Other</option>
           </select>
         </div>
+        <div class="col-md-3"><label class="form-label">Maiden Name</label><input type="text" class="form-control-gov" id="new-maiden" placeholder="Birth surname if changed" /></div>
+        <div class="col-md-4"><label class="form-label">City of Birth *</label><input type="text" class="form-control-gov" id="new-city" /></div>
+        <div class="col-md-4"><label class="form-label">State of Birth</label><input type="text" class="form-control-gov" id="new-state" /></div>
+        <div class="col-md-4"><label class="form-label">Country of Birth</label><input type="text" class="form-control-gov" id="new-country" value="USA" /></div>
+        <div class="col-12"><hr style="border-color:var(--light-gray);" /><div style="font-family:var(--font-display);font-size:11px;letter-spacing:1.5px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Current Address (Optional)</div></div>
+        <div class="col-md-5"><label class="form-label">Street</label><input type="text" class="form-control-gov" id="new-street" placeholder="123 Main St" /></div>
+        <div class="col-md-3"><label class="form-label">City</label><input type="text" class="form-control-gov" id="new-addr-city" /></div>
+        <div class="col-md-2"><label class="form-label">State</label><input type="text" class="form-control-gov" id="new-addr-state" /></div>
+        <div class="col-md-2"><label class="form-label">ZIP</label><input type="text" class="form-control-gov" id="new-addr-zip" /></div>
         <div class="col-12">
           <div id="add-error" class="alert-banner danger" style="display:none;"><i class="bi bi-exclamation-triangle"></i><span id="add-error-msg"></span></div>
           <div id="add-success" class="alert-banner info" style="display:none;"><i class="bi bi-check-circle"></i>Person registered successfully.</div>
@@ -78,30 +80,48 @@
     </div>
   </div>
 
+  <!-- TABLE -->
   <div class="data-table-wrapper">
     <div class="table-header">
       <h2><i class="bi bi-people me-2"></i>Identity Records</h2>
       <div class="table-actions">
-        <input type="text" id="search-input" placeholder="Search by name..." oninput="filterTable()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:3px;font-size:12px;" />
-        <button class="btn-primary btn-sm" onclick="document.getElementById('addPersonCard').style.display='block';window.scrollTo(0,0);">+ Register Person</button>
+        <input type="text" id="search-input" placeholder="Search name…" oninput="filterTable()"
+          style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:3px;font-size:12px;" />
+        <select id="filter-citizenship" onchange="filterTable()"
+          style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 10px;border-radius:3px;font-size:12px;">
+          <option value="">All Citizenship</option>
+          <option value="CITIZEN">Citizen</option>
+          <option value="PERMANENT_RESIDENT">Permanent Resident</option>
+          <option value="VISA_HOLDER">Visa Holder</option>
+          <option value="UNDOCUMENTED_ALIEN">Undocumented Alien</option>
+        </select>
+        <button class="btn-primary btn-sm" id="addBtn" onclick="showAddPanel()">+ Register Person</button>
       </div>
     </div>
     <table class="data-table">
       <thead>
-        <tr>
-          <th>Record ID</th>
-          <th>Full Name</th>
-          <th>Date of Birth</th>
-          <th>Place of Birth</th>
-          <th>Citizenship</th>
-          <th>Registered</th>
-          <th>Actions</th>
-        </tr>
+        <tr><th>ID</th><th>Full Name</th><th>Gender</th><th>Date of Birth</th><th>Place of Birth</th><th>Citizenship</th><th>Status</th><th>Registered</th><th>Actions</th></tr>
       </thead>
       <tbody id="persons-tbody">
-        <tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">Loading records...</td></tr>
+        <tr><td colspan="9" style="text-align:center;padding:32px;color:#8896B0;">Loading records...</td></tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- EDIT AUDIT TRAIL -->
+  <div class="content-card mt-4">
+    <div class="card-header">
+      <h3><i class="bi bi-clock-history me-1"></i>Recent Person Record Changes</h3>
+      <a href="/pages/audit/" class="btn-secondary btn-sm">Full Audit Log</a>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <table class="data-table">
+        <thead><tr><th>Timestamp</th><th>Officer</th><th>Action</th><th>Person</th><th>Reason / Details</th></tr></thead>
+        <tbody id="edit-audit-tbody">
+          <tr><td colspan="5" style="text-align:center;padding:24px;color:#8896B0;">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -109,73 +129,149 @@
   <div class="footer-inner">
     <p>CivicID v1.0 — Persons Registry</p>
     <img src="/media/civic_id_2026.png" class="footer-seal" alt="" onerror="this.style.display='none'" />
-    <p>All records subject to federal privacy regulations</p>
+    <p>All records subject to federal privacy regulations — edits are permanently logged</p>
   </div>
 </footer>
 
 <script>
 let allPersons = [];
+const CAN_EDIT = ['SUPER_ADMIN','REGISTRAR','DMV'];
 
-apiFetch('/persons/').then(data => {
-  allPersons = Array.isArray(data) ? data : (data.results || []);
-  document.getElementById('total-count').textContent = allPersons.length.toLocaleString();
-  renderTable(allPersons);
-}).catch(() => {
-  document.getElementById('total-count').textContent = '0';
-  document.getElementById('persons-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
-});
+function showAddPanel() {
+  const agency = getAgency();
+  if (!CAN_EDIT.includes(agency)) {
+    alert(`Your role (${agency}) is not authorized to add persons to the system.`);
+    return;
+  }
+  document.getElementById('addPersonCard').style.display = 'block';
+  window.scrollTo(0,0);
+}
+
+function loadPersons() {
+  apiFetch('/persons/').then(data => {
+    allPersons = Array.isArray(data) ? data : (data.results || []);
+    document.getElementById('total-count').textContent = allPersons.length.toLocaleString();
+    renderTable(allPersons);
+  }).catch(() => {
+    document.getElementById('total-count').textContent = '0';
+    document.getElementById('persons-tbody').innerHTML =
+      '<tr><td colspan="9" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
+  });
+}
 
 function renderTable(items) {
-  const tbody = document.getElementById('persons-tbody');
-  if (!items.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">No records found</td></tr>'; return; }
+  const tbody   = document.getElementById('persons-tbody');
+  const agency  = getAgency();
+  const canEdit = CAN_EDIT.includes(agency);
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:#8896B0;">No records found</td></tr>';
+    return;
+  }
+  const gIcon = { MALE:'♂', FEMALE:'♀', OTHER:'⊕' };
   tbody.innerHTML = items.map(p => `
     <tr>
       <td class="mono">#${String(p.id).padStart(4,'0')}</td>
-      <td><strong>${p.first_name} ${p.middle_name ? p.middle_name[0]+'.' : ''} ${p.last_name || ''}</strong></td>
+      <td>
+        <strong>${p.first_name}${p.middle_name?' '+p.middle_name[0]+'.':''} ${p.last_name||''}</strong>
+        ${p.suffix?`<span style="font-size:11px;color:var(--text-muted);"> ${p.suffix}</span>`:''}
+        ${p.date_of_death?'<span class="status-badge rejected" style="margin-left:6px;font-size:9px;">DECEASED</span>':''}
+      </td>
+      <td><span style="font-size:15px;">${gIcon[p.gender]||'—'}</span> <span style="font-size:12px;">${(p.gender||'').replace(/_/g,' ')}</span></td>
       <td>${formatDate(p.date_of_birth)}</td>
-      <td>${p.place_of_birth_city || '—'}${p.place_of_birth_state ? ', '+p.place_of_birth_state : ''}, ${p.place_of_birth_country}</td>
+      <td style="font-size:12px;">${p.place_of_birth_city||'—'}${p.place_of_birth_state?', '+p.place_of_birth_state:''}</td>
       <td>${statusBadge(p.citizenship_status)}</td>
-      <td>${formatDate(p.created_at)}</td>
-      <td><button class="btn-secondary btn-sm" onclick="viewPerson(${p.id})">View</button></td>
+      <td>${p.date_of_death?statusBadge('DECEASED'):statusBadge('ACTIVE')}</td>
+      <td style="font-size:12px;">${formatDate(p.created_at)}</td>
+      <td>
+        ${canEdit
+          ? `<button class="btn-secondary btn-sm" onclick="openEditModal(${p.id})"><i class="bi bi-pencil"></i> Edit</button>`
+          : `<span style="font-size:12px;color:var(--text-muted);">View only</span>`}
+      </td>
     </tr>`).join('');
 }
 
 function filterTable() {
-  const q = document.getElementById('search-input').value.toLowerCase();
-  renderTable(allPersons.filter(p => (p.first_name+' '+p.last_name).toLowerCase().includes(q)));
+  const q  = document.getElementById('search-input').value.toLowerCase();
+  const cs = document.getElementById('filter-citizenship').value;
+  renderTable(allPersons.filter(p => {
+    const nm = (p.first_name+' '+(p.last_name||'')).toLowerCase().includes(q);
+    const cm = !cs || p.citizenship_status === cs;
+    return nm && cm;
+  }));
 }
 
 function addPerson() {
   const errEl = document.getElementById('add-error');
-  const errMsg = document.getElementById('add-error-msg');
   errEl.style.display = 'none';
   document.getElementById('add-success').style.display = 'none';
-  const body = {
-    first_name: document.getElementById('new-first').value.trim(),
-    middle_name: document.getElementById('new-middle').value.trim() || null,
-    last_name: document.getElementById('new-last').value.trim() || null,
-    date_of_birth: document.getElementById('new-dob').value,
-    place_of_birth_city: document.getElementById('new-city').value.trim(),
-    place_of_birth_state: document.getElementById('new-state').value.trim() || null,
-    place_of_birth_country: document.getElementById('new-country').value.trim() || 'USA',
-    citizenship_status: document.getElementById('new-citizenship').value,
-  };
-  if (!body.first_name || !body.date_of_birth || !body.place_of_birth_city) {
-    errMsg.textContent = 'First name, date of birth, and city are required.';
+  const agency = getAgency();
+  if (!CAN_EDIT.includes(agency)) {
+    document.getElementById('add-error-msg').textContent = `Role ${agency} cannot add persons.`;
     errEl.style.display = 'flex'; return;
   }
-  apiFetch('/persons/', { method: 'POST', body: JSON.stringify(body) }).then(p => {
+  const body = {
+    first_name:             document.getElementById('new-first').value.trim(),
+    middle_name:            document.getElementById('new-middle').value.trim()||null,
+    last_name:              document.getElementById('new-last').value.trim()||null,
+    suffix:                 document.getElementById('new-suffix').value.trim()||null,
+    gender:                 document.getElementById('new-gender').value,
+    maiden_name:            document.getElementById('new-maiden').value.trim()||null,
+    date_of_birth:          document.getElementById('new-dob').value,
+    place_of_birth_city:    document.getElementById('new-city').value.trim(),
+    place_of_birth_state:   document.getElementById('new-state').value.trim()||null,
+    place_of_birth_country: document.getElementById('new-country').value.trim()||'USA',
+    citizenship_status:     document.getElementById('new-citizenship').value,
+    address_street:         document.getElementById('new-street').value.trim()||null,
+    address_city:           document.getElementById('new-addr-city').value.trim()||null,
+    address_state:          document.getElementById('new-addr-state').value.trim()||null,
+    address_zip:            document.getElementById('new-addr-zip').value.trim()||null,
+  };
+  if (!body.first_name || !body.date_of_birth || !body.place_of_birth_city) {
+    document.getElementById('add-error-msg').textContent = 'First name, date of birth, and city of birth are required.';
+    errEl.style.display = 'flex'; return;
+  }
+  apiFetch('/persons/', { method:'POST', body:JSON.stringify(body) }).then(p => {
     allPersons.unshift(p);
     renderTable(allPersons);
     document.getElementById('total-count').textContent = allPersons.length.toLocaleString();
     document.getElementById('add-success').style.display = 'flex';
-    ['new-first','new-middle','new-last','new-dob','new-city','new-state'].forEach(id => document.getElementById(id).value = '');
-  }).catch(err => { errMsg.textContent = `Failed: ${err.message}`; errEl.style.display = 'flex'; });
+    ['new-first','new-middle','new-last','new-suffix','new-maiden','new-dob',
+     'new-city','new-state','new-street','new-addr-city','new-addr-state','new-addr-zip'
+    ].forEach(id => { document.getElementById(id).value=''; });
+    document.getElementById('new-gender').value='MALE';
+    document.getElementById('new-citizenship').value='CITIZEN';
+    document.getElementById('new-country').value='USA';
+    loadEditAudit();
+  }).catch(err => {
+    document.getElementById('add-error-msg').textContent = `Failed: ${err.message}`;
+    errEl.style.display = 'flex';
+  });
 }
 
-function viewPerson(id) {
-  alert(`Person #${id} — Full detail view coming soon.`);
+function loadEditAudit() {
+  apiFetch('/audit-logs/').then(data => {
+    const items = (Array.isArray(data)?data:(data.results||[]))
+      .filter(l => ['PERSON_EDIT','CREATE'].includes(l.action_type))
+      .slice(0,10);
+    const tbody = document.getElementById('edit-audit-tbody');
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#8896B0;">No person edits logged yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(l => `
+      <tr>
+        <td style="font-size:12px;white-space:nowrap;">${formatDateTime(l.timestamp)}</td>
+        <td style="font-size:12px;">${l.user?`User #${l.user}`:'System'}</td>
+        <td>${statusBadge(l.action_type)}</td>
+        <td class="mono">#${String(l.entity_id).padStart(4,'0')}</td>
+        <td style="font-size:11px;color:var(--text-muted);max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+            title="${(l.reason_code||'').replace(/"/g,'&quot;')}">${l.reason_code||'—'}</td>
+      </tr>`).join('');
+  }).catch(()=>{});
 }
+
+loadPersons();
+loadEditAudit();
 </script>
 </body>
 </html>

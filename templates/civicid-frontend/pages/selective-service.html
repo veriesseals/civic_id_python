@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CivicID — Selective Service</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="/static/styles.css" rel="stylesheet" />
+</head>
+<body>
+<script src="/static/civic.js"></script>
+<script>injectHeader('selective-service');</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<div class="page-container">
+  <div class="page-hero hero-danger">
+    <div><h1><i class="bi bi-shield-fill me-2"></i>Selective Service Registry</h1>
+      <p>Federal registration per 50 U.S.C. § 3802 — males aged 18–25 — auto-registered by system at age 18</p>
+    </div>
+    <div class="hero-meta"><div style="color:var(--gold-light);">REGISTRAR / SUPER_ADMIN</div></div>
+  </div>
+  <div class="alert-banner info mb-4" style="font-size:12px;">
+    <i class="bi bi-info-circle"></i>
+    Federal law requires all male persons between 18–25 to register, regardless of citizenship status.
+    Registration is automated by the Celery daily task at midnight UTC. Manual registration is available below.
+  </div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="stat-card green"><div class="stat-label">Active</div><div class="stat-value" id="stat-active">0</div></div></div>
+    <div class="col-md-3"><div class="stat-card gold"><div class="stat-label">Exempt</div><div class="stat-value" id="stat-exempt">0</div></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-label">Deregistered (26+)</div><div class="stat-value" id="stat-deregistered">0</div></div></div>
+    <div class="col-md-3"><div class="stat-card red"><div class="stat-label">Deceased</div><div class="stat-value" id="stat-deceased">0</div></div></div>
+  </div>
+  <div class="data-table-wrapper">
+    <div class="table-header">
+      <h2><i class="bi bi-shield-fill me-2"></i>Selective Service Registrants</h2>
+      <div class="table-actions">
+        <select id="filter-status" onchange="filterRecords()"
+          style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 10px;border-radius:3px;font-size:12px;">
+          <option value="">All Status</option>
+          <option value="ACTIVE">Active</option><option value="EXEMPT">Exempt</option>
+          <option value="DEREGISTERED">Deregistered</option><option value="DECEASED">Deceased</option>
+          <option value="PENDING">Pending</option>
+        </select>
+        <button class="btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newSSModal">
+          <i class="bi bi-plus-circle me-1"></i>Manual Register
+        </button>
+      </div>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>Registration #</th><th>Person</th><th>Status</th><th>Method</th><th>Reg Date</th><th>Exempt</th><th>Deregistered</th></tr></thead>
+      <tbody id="records-tbody"><tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="newSSModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background:var(--cobalt-deeper);border-bottom:2px solid var(--gold);">
+        <h5 class="modal-title" style="font-family:var(--font-display);letter-spacing:2px;color:white;font-size:14px;">
+          <i class="bi bi-shield-fill me-2"></i>MANUAL SELECTIVE SERVICE REGISTRATION
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:24px;">
+        <div class="alert-banner warning mb-3" style="font-size:12px;">
+          <i class="bi bi-exclamation-triangle"></i>
+          Federal law mandates registration for all males 18–25 regardless of citizenship. Verify the person's gender and age before registering.
+        </div>
+        <div class="row g-3">
+          <div class="col-md-5">
+            <label class="form-label">Person ID *</label>
+            <div style="display:flex;gap:8px;">
+              <input type="number" class="form-control-gov" id="ss-person-id" style="flex:1;" />
+              <button class="btn-secondary btn-sm" onclick="ssLookup()">Lookup</button>
+            </div>
+            <div id="ss-lookup" style="font-size:12px;margin-top:6px;"></div>
+          </div>
+          <div class="col-md-4"><label class="form-label">Registration Number *</label><input type="text" class="form-control-gov" id="ss-reg-num" placeholder="SS-XXXXXXXXXX" /></div>
+          <div class="col-md-3"><label class="form-label">Registration Date *</label><input type="date" class="form-control-gov" id="ss-date" /></div>
+          <div class="col-md-4">
+            <label class="form-label">Registration Method</label>
+            <select class="form-control-gov" id="ss-method">
+              <option value="MANUAL_STAFF">Manual — Staff Entry</option>
+              <option value="SELF_REPORTED">Self-Reported</option>
+              <option value="POSTAL">Postal Registration</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Status</label>
+            <select class="form-control-gov" id="ss-status">
+              <option value="ACTIVE">Active</option>
+              <option value="PENDING">Pending Confirmation</option>
+              <option value="EXEMPT">Exempt</option>
+            </select>
+          </div>
+          <div class="col-12"><label class="form-label">Notes</label><textarea class="form-control-gov" id="ss-notes" rows="2"></textarea></div>
+        </div>
+        <div class="alert-banner danger mt-3" id="ss-error" style="display:none;"><i class="bi bi-exclamation-triangle"></i><span id="ss-error-msg"></span></div>
+        <div class="alert-banner info mt-3" id="ss-success" style="display:none;"><i class="bi bi-check-circle"></i>Selective Service registration recorded.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn-primary" onclick="submitSS()"><i class="bi bi-save me-1"></i>Register</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>CivicID v1.0 — Selective Service System</p>
+    <img src="/media/civic_id_2026.png" class="footer-seal" alt="" onerror="this.style.display='none'" />
+    <p>Per 50 U.S.C. § 3802 — Military Selective Service Act</p>
+  </div>
+</footer>
+<script>
+let allRecords=[],ssPersonId=null;
+
+function ssLookup(){
+  const pid=document.getElementById('ss-person-id').value.trim();
+  const el=document.getElementById('ss-lookup');ssPersonId=null;
+  if(!pid)return; el.textContent='Searching…';
+  apiFetch('/persons/'+pid+'/').then(p=>{
+    ssPersonId=p.id;
+    const gi={MALE:'♂',FEMALE:'♀',OTHER:'⊕'};
+    const age=Math.floor((new Date()-new Date(p.date_of_birth))/31557600000);
+    let warn='';
+    if(p.gender!=='MALE')warn=' <span style="color:var(--warning);">⚠ Not male — verify before registering</span>';
+    if(age<18||age>25)warn+=' <span style="color:var(--danger);">⚠ Age '+age+' — outside 18-25 range</span>';
+    el.innerHTML='<span style="color:var(--success);">✓ '+p.first_name+' '+(p.last_name||'')+'</span>'
+      +' <span style="margin-left:8px;">'+(gi[p.gender]||'')+'</span>'
+      +' <span style="margin-left:8px;color:var(--text-muted);">Age '+age+'</span>'+warn;
+  }).catch(()=>{el.innerHTML='<span style="color:var(--danger);">Not found</span>';});
+}
+
+async function submitSS(){
+  const e=document.getElementById('ss-error'),s=document.getElementById('ss-success');
+  e.style.display='none';s.style.display='none';
+  if(!ssPersonId){document.getElementById('ss-error-msg').textContent='Look up a valid person first.';e.style.display='flex';return;}
+  const body={
+    person:ssPersonId,
+    registration_number:document.getElementById('ss-reg-num').value.trim(),
+    registration_date:document.getElementById('ss-date').value,
+    registration_method:document.getElementById('ss-method').value,
+    status:document.getElementById('ss-status').value,
+    notes:document.getElementById('ss-notes').value.trim()||null,
+  };
+  if(!body.registration_number||!body.registration_date){
+    document.getElementById('ss-error-msg').textContent='Registration number and date required.';e.style.display='flex';return;
+  }
+  try{
+    await apiFetch('/selective-service/',{method:'POST',body:JSON.stringify(body)});
+    s.style.display='flex';
+    setTimeout(()=>{bootstrap.Modal.getInstance(document.getElementById('newSSModal')).hide();loadRecords();},1400);
+  }catch(err){document.getElementById('ss-error-msg').textContent='Failed: '+err.message;e.style.display='flex';}
+}
+
+function loadRecords(){
+  apiFetch('/selective-service/').then(d=>{
+    allRecords=Array.isArray(d)?d:(d.results||[]);
+    document.getElementById('stat-active').textContent=allRecords.filter(r=>r.status==='ACTIVE').length;
+    document.getElementById('stat-exempt').textContent=allRecords.filter(r=>r.status==='EXEMPT').length;
+    document.getElementById('stat-deregistered').textContent=allRecords.filter(r=>r.status==='DEREGISTERED').length;
+    document.getElementById('stat-deceased').textContent=allRecords.filter(r=>r.status==='DECEASED').length;
+    renderRecords(allRecords);
+  }).catch(()=>{document.getElementById('records-tbody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';});
+}
+
+function renderRecords(items){
+  const t=document.getElementById('records-tbody');
+  if(!items.length){t.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">No registrations found</td></tr>';return;}
+  t.innerHTML=items.map(r=>'<tr>'
+    +'<td class="mono">'+r.registration_number+'</td>'
+    +'<td>'+(r.person_name||'Person #'+r.person)+'</td>'
+    +'<td>'+statusBadge(r.status)+'</td>'
+    +'<td style="font-size:12px;">'+(r.registration_method||'—').replace(/_/g,' ')+'</td>'
+    +'<td>'+formatDate(r.registration_date)+'</td>'
+    +'<td style="font-size:12px;">'+(r.is_exempt?'<span style="color:var(--warning);">Yes — '+(r.exemption_reason||'')+'</span>':'No')+'</td>'
+    +'<td>'+formatDate(r.deregistered_date)+'</td>'
+    +'</tr>').join('');
+}
+
+function filterRecords(){
+  const st=document.getElementById('filter-status').value;
+  renderRecords(st?allRecords.filter(r=>r.status===st):allRecords);
+}
+
+document.getElementById('newSSModal').addEventListener('show.bs.modal',()=>{
+  document.getElementById('ss-error').style.display='none';
+  document.getElementById('ss-success').style.display='none';
+  document.getElementById('ss-date').value=new Date().toISOString().split('T')[0];
+  ssPersonId=null;document.getElementById('ss-lookup').textContent='';
+});
+
+loadRecords();
+</script>
+</body>
+</html>
