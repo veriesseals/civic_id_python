@@ -12,42 +12,131 @@
 <body>
 <script src="/static/civic.js"></script>
 <script>injectHeader('id-applications');</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <div class="page-container">
   <div class="page-hero">
     <div>
       <h1><i class="bi bi-card-heading me-2"></i>ID Applications</h1>
-      <p>Manage ID card applications — first-time, renewals, and replacements</p>
+      <p>Review, approve, reject, and manage government ID card applications</p>
     </div>
     <div class="hero-meta">
       TOTAL: <span id="total-count" style="color:var(--gold-light);">Loading...</span>
     </div>
   </div>
 
-  <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">
-    <button onclick="filterByStatus('')" class="btn-primary btn-sm">All</button>
-    <button onclick="filterByStatus('DRAFT')" class="btn-secondary btn-sm">Draft</button>
-    <button onclick="filterByStatus('SUBMITTED')" class="btn-secondary btn-sm">Submitted</button>
-    <button onclick="filterByStatus('UNDER_REVIEW')" class="btn-secondary btn-sm">Under Review</button>
-    <button onclick="filterByStatus('APPROVED')" class="btn-secondary btn-sm">Approved</button>
-    <button onclick="filterByStatus('REJECTED')" class="btn-secondary btn-sm">Rejected</button>
-    <button onclick="filterByStatus('ISSUED')" class="btn-secondary btn-sm">Issued</button>
+  <!-- STAT CARDS -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-2"><div class="stat-card gold"><div class="stat-label">Draft</div><div class="stat-value" id="stat-draft">0</div></div></div>
+    <div class="col-md-2"><div class="stat-card"><div class="stat-label">Submitted</div><div class="stat-value" id="stat-submitted">0</div></div></div>
+    <div class="col-md-2"><div class="stat-card"><div class="stat-label">Under Review</div><div class="stat-value" id="stat-review">0</div></div></div>
+    <div class="col-md-2"><div class="stat-card green"><div class="stat-label">Approved</div><div class="stat-value" id="stat-approved">0</div></div></div>
+    <div class="col-md-2"><div class="stat-card red"><div class="stat-label">Rejected</div><div class="stat-value" id="stat-rejected">0</div></div></div>
+    <div class="col-md-2"><div class="stat-card green"><div class="stat-label">Issued</div><div class="stat-value" id="stat-issued">0</div></div></div>
   </div>
 
+  <!-- ALERT: pending actions -->
+  <div id="pending-alert" class="alert-banner warning mb-4" style="display:none;">
+    <i class="bi bi-exclamation-triangle-fill" style="flex-shrink:0;"></i>
+    <div><strong><span id="pending-count">0</span> application(s)</strong> are awaiting DMV review.</div>
+  </div>
+
+  <!-- FILTER PILLS -->
+  <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">
+    <button onclick="filterByStatus('')"             class="btn-primary btn-sm"   id="pill-all">All</button>
+    <button onclick="filterByStatus('DRAFT')"        class="btn-secondary btn-sm" id="pill-DRAFT">Draft</button>
+    <button onclick="filterByStatus('SUBMITTED')"    class="btn-secondary btn-sm" id="pill-SUBMITTED">Submitted</button>
+    <button onclick="filterByStatus('UNDER_REVIEW')" class="btn-secondary btn-sm" id="pill-UNDER_REVIEW">Under Review</button>
+    <button onclick="filterByStatus('APPROVED')"     class="btn-secondary btn-sm" id="pill-APPROVED">Approved</button>
+    <button onclick="filterByStatus('REJECTED')"     class="btn-secondary btn-sm" id="pill-REJECTED">Rejected</button>
+    <button onclick="filterByStatus('ISSUED')"       class="btn-secondary btn-sm" id="pill-ISSUED">Issued</button>
+  </div>
+
+  <!-- APPLICATIONS TABLE -->
   <div class="data-table-wrapper">
     <div class="table-header">
       <h2><i class="bi bi-card-heading me-2"></i>Application Registry</h2>
+      <div class="table-actions">
+        <input type="text" id="search-input" placeholder="Search person ID…" oninput="filterTable()"
+          style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:3px;font-size:12px;" />
+      </div>
     </div>
     <table class="data-table">
       <thead>
         <tr>
-          <th>App ID</th><th>Person ID</th><th>Application Type</th><th>Status</th><th>Submitted</th><th>Reviewed By</th><th>State</th>
+          <th>App ID</th>
+          <th>Person</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Submitted</th>
+          <th>Reviewed By</th>
+          <th>State</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody id="apps-tbody">
-        <tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">Loading applications...</td></tr>
+        <tr><td colspan="8" style="text-align:center;padding:32px;color:#8896B0;">Loading applications...</td></tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- ISSUED IDs MANAGEMENT SECTION -->
+  <div class="data-table-wrapper mt-4">
+    <div class="table-header">
+      <h2><i class="bi bi-credit-card me-2"></i>Issued ID Management</h2>
+      <div class="table-actions">
+        <span style="color:rgba(255,255,255,0.6);font-size:12px;font-family:var(--font-display);letter-spacing:1px;">
+          Suspend or Revoke active credentials
+        </span>
+      </div>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID Number</th>
+          <th>Person</th>
+          <th>Issue Date</th>
+          <th>Expiration</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="ids-tbody">
+        <tr><td colspan="6" style="text-align:center;padding:32px;color:#8896B0;">Loading issued IDs...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ACTION MODAL -->
+<div class="modal fade" id="actionModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" id="actionModalHeader" style="background:var(--cobalt-deeper);border-bottom:2px solid var(--gold);">
+        <h5 class="modal-title" id="actionModalTitle" style="font-family:var(--font-display);letter-spacing:2px;color:white;font-size:14px;"></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:24px;">
+        <div id="actionModalBody"></div>
+        <div class="mb-3">
+          <label class="form-label" style="color:var(--cobalt-dark);">Decision Reason / Notes *</label>
+          <textarea class="form-control-gov" id="actionReason" rows="3"
+            placeholder="e.g. Identity documents verified. Approved for issuance."></textarea>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">This reason is permanently logged with your credentials.</div>
+        </div>
+        <div class="alert-banner danger" id="actionError" style="display:none;">
+          <i class="bi bi-exclamation-triangle"></i><span id="actionErrorMsg"></span>
+        </div>
+        <div class="alert-banner info" id="actionSuccess" style="display:none;">
+          <i class="bi bi-check-circle"></i><span id="actionSuccessMsg"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" id="actionConfirmBtn" class="btn-primary" onclick="confirmAction()"></button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -61,34 +150,317 @@
 
 <script>
 let allApps = [];
+let allIDs  = [];
+let personMap = {};
+let currentAction = null; // { type, id, endpoint }
+const MEDIA_BASE = 'http://127.0.0.1:8000';
 
-apiFetch('/id-applications/').then(data => {
-  allApps = Array.isArray(data) ? data : (data.results || []);
-  document.getElementById('total-count').textContent = allApps.length;
-  renderApps(allApps);
-}).catch(() => {
-  document.getElementById('total-count').textContent = '0';
-  document.getElementById('apps-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
-});
+// Pre-load persons for name display
+apiFetch('/persons/')
+  .then(d => { (Array.isArray(d)?d:(d.results||[])).forEach(p=>{ personMap[p.id]=p; }); })
+  .catch(()=>{});
+
+function buildPhotoUrl(path) {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  return `${MEDIA_BASE}/media/${path.replace(/^\//, '')}`;
+}
+
+function personThumb(personId) {
+  const p = personMap[personId];
+  if (!p) return `<span class="mono" style="font-size:12px;">#${String(personId).padStart(4,'0')}</span>`;
+  const url = buildPhotoUrl(p.photo);
+  const name = `${p.first_name} ${p.last_name||''}`.trim();
+  const img = url
+    ? `<img src="${url}" style="width:28px;height:35px;object-fit:cover;border-radius:2px;border:1px solid var(--cobalt);flex-shrink:0;" onerror="this.style.display='none';" />`
+    : '';
+  return `<div style="display:flex;align-items:center;gap:6px;">${img}<div><div style="font-weight:600;font-size:13px;">${name}</div><div class="mono" style="font-size:11px;color:var(--text-muted);">#${String(personId).padStart(4,'0')}</div></div></div>`;
+}
+
+// ── APPLICATION ACTION BUTTONS ───────────────────────────────────
+// Returns the appropriate action buttons based on current status.
+// DMV workflow: DRAFT → SUBMITTED → UNDER_REVIEW → APPROVED → ISSUED
+//               Any active status can be REJECTED
+function appActionButtons(app) {
+  const btns = [];
+  const s = app.status;
+
+  if (s === 'DRAFT') {
+    btns.push(`<button class="btn-secondary btn-sm" onclick="openAction('submit', ${app.id})">
+      <i class="bi bi-send"></i> Submit</button>`);
+  }
+  if (s === 'SUBMITTED') {
+    btns.push(`<button class="btn-secondary btn-sm" onclick="openAction('review', ${app.id})">
+      <i class="bi bi-eye"></i> Start Review</button>`);
+  }
+  if (s === 'UNDER_REVIEW') {
+    btns.push(`<button class="btn-primary btn-sm" onclick="openAction('approve', ${app.id})" style="background:var(--success);border:none;">
+      <i class="bi bi-check-lg"></i> Approve</button>`);
+    btns.push(`<button class="btn-danger btn-sm" onclick="openAction('reject', ${app.id})">
+      <i class="bi bi-x-lg"></i> Reject</button>`);
+  }
+  if (s === 'APPROVED') {
+    btns.push(`<button class="btn-primary btn-sm" onclick="openAction('issue', ${app.id})">
+      <i class="bi bi-card-heading"></i> Issue ID</button>`);
+  }
+  if (!['REJECTED', 'ISSUED', 'DRAFT'].includes(s)) {
+    // Can reject anything in progress (already added above for UNDER_REVIEW)
+    if (s !== 'UNDER_REVIEW') {
+      btns.push(`<button class="btn-danger btn-sm" onclick="openAction('reject', ${app.id})">
+        <i class="bi bi-x-lg"></i> Reject</button>`);
+    }
+  }
+  return btns.length
+    ? `<div style="display:flex;gap:4px;flex-wrap:wrap;">${btns.join('')}</div>`
+    : '<span style="font-size:12px;color:var(--text-muted);">—</span>';
+}
+
+// ── ISSUED ID ACTION BUTTONS ─────────────────────────────────────
+function idActionButtons(issuedId) {
+  const s = issuedId.status;
+  const btns = [];
+  if (s === 'ACTIVE') {
+    btns.push(`<button class="btn-secondary btn-sm" onclick="openIdAction('suspend', ${issuedId.id}, '${issuedId.id_number}')">
+      <i class="bi bi-pause-circle"></i> Suspend</button>`);
+    btns.push(`<button class="btn-danger btn-sm" onclick="openIdAction('revoke', ${issuedId.id}, '${issuedId.id_number}')">
+      <i class="bi bi-slash-circle"></i> Revoke</button>`);
+  }
+  if (s === 'SUSPENDED') {
+    btns.push(`<button class="btn-primary btn-sm" onclick="openIdAction('reactivate', ${issuedId.id}, '${issuedId.id_number}')" style="background:var(--success);border:none;">
+      <i class="bi bi-play-circle"></i> Reactivate</button>`);
+    btns.push(`<button class="btn-danger btn-sm" onclick="openIdAction('revoke', ${issuedId.id}, '${issuedId.id_number}')">
+      <i class="bi bi-slash-circle"></i> Revoke</button>`);
+  }
+  if (s === 'REVOKED' || s === 'EXPIRED' || s === 'REPLACED') {
+    return '<span style="font-size:12px;color:var(--text-muted);">No actions</span>';
+  }
+  return btns.length
+    ? `<div style="display:flex;gap:4px;flex-wrap:wrap;">${btns.join('')}</div>`
+    : '<span style="font-size:12px;color:var(--text-muted);">—</span>';
+}
+
+// ── ACTION CONFIGS ───────────────────────────────────────────────
+const ACTION_CONFIG = {
+  submit:     { title: 'SUBMIT APPLICATION',    color: 'var(--cobalt)',   newStatus: 'SUBMITTED',    btnLabel: 'Submit',    btnClass: 'btn-primary' },
+  review:     { title: 'START REVIEW',          color: 'var(--cobalt)',   newStatus: 'UNDER_REVIEW', btnLabel: 'Start Review', btnClass: 'btn-primary' },
+  approve:    { title: 'APPROVE APPLICATION',   color: 'var(--success)',  newStatus: 'APPROVED',     btnLabel: 'Approve',   btnClass: 'btn-success' },
+  reject:     { title: 'REJECT APPLICATION',    color: 'var(--danger)',   newStatus: 'REJECTED',     btnLabel: 'Reject',    btnClass: 'btn-danger' },
+  issue:      { title: 'ISSUE ID CREDENTIAL',   color: 'var(--success)',  newStatus: 'ISSUED',       btnLabel: 'Issue ID',  btnClass: 'btn-primary' },
+};
+
+const ID_ACTION_CONFIG = {
+  suspend:    { title: 'SUSPEND ISSUED ID',     color: 'var(--warning)',  newStatus: 'SUSPENDED',    btnLabel: 'Suspend',     btnClass: 'btn-secondary' },
+  reactivate: { title: 'REACTIVATE ISSUED ID',  color: 'var(--success)',  newStatus: 'ACTIVE',       btnLabel: 'Reactivate',  btnClass: 'btn-success' },
+  revoke:     { title: 'REVOKE ISSUED ID',      color: 'var(--danger)',   newStatus: 'REVOKED',      btnLabel: 'Revoke',      btnClass: 'btn-danger' },
+};
+
+function openAction(actionType, appId) {
+  const cfg = ACTION_CONFIG[actionType];
+  const app = allApps.find(a => a.id === appId);
+  if (!cfg || !app) return;
+
+  currentAction = { type: 'application', actionType, id: appId };
+
+  const p = personMap[app.person];
+  const pName = p ? `${p.first_name} ${p.last_name||''}`.trim() : `Person #${app.person}`;
+
+  document.getElementById('actionModalTitle').textContent = cfg.title;
+  document.getElementById('actionModalHeader').style.borderBottomColor = cfg.color;
+  document.getElementById('actionModalBody').innerHTML = `
+    <div style="background:var(--off-white);border:1px solid var(--light-gray);border-radius:4px;padding:14px;margin-bottom:16px;font-size:13px;">
+      <div><strong>Application #${String(appId).padStart(4,'0')}</strong> — ${app.application_type.replace(/_/g,' ')}</div>
+      <div style="color:var(--text-muted);margin-top:4px;">Person: ${pName} &nbsp;·&nbsp; Current status: ${app.status}</div>
+      <div style="margin-top:8px;">New status: <span class="status-badge ${statusClass(cfg.newStatus)}">${cfg.newStatus.replace(/_/g,' ')}</span></div>
+    </div>`;
+
+  const btn = document.getElementById('actionConfirmBtn');
+  btn.textContent = cfg.btnLabel;
+  btn.className = cfg.btnClass;
+  document.getElementById('actionReason').value = '';
+  document.getElementById('actionError').style.display = 'none';
+  document.getElementById('actionSuccess').style.display = 'none';
+  new bootstrap.Modal(document.getElementById('actionModal')).show();
+}
+
+function openIdAction(actionType, issuedIdId, idNumber) {
+  const cfg = ID_ACTION_CONFIG[actionType];
+  if (!cfg) return;
+
+  currentAction = { type: 'issuedId', actionType, id: issuedIdId };
+
+  document.getElementById('actionModalTitle').textContent = cfg.title;
+  document.getElementById('actionModalHeader').style.borderBottomColor = cfg.color;
+  document.getElementById('actionModalBody').innerHTML = `
+    <div style="background:var(--off-white);border:1px solid var(--light-gray);border-radius:4px;padding:14px;margin-bottom:16px;font-size:13px;">
+      <div><strong>ID: ${idNumber}</strong></div>
+      <div style="margin-top:8px;">New status: <span class="status-badge ${statusClass(cfg.newStatus)}">${cfg.newStatus}</span></div>
+      ${actionType === 'revoke' ? '<div style="color:var(--danger);margin-top:8px;font-size:12px;"><i class="bi bi-exclamation-triangle me-1"></i>Revocation is permanent and cannot be undone.</div>' : ''}
+    </div>`;
+
+  const btn = document.getElementById('actionConfirmBtn');
+  btn.textContent = cfg.btnLabel;
+  btn.className = cfg.btnClass;
+  document.getElementById('actionReason').value = '';
+  document.getElementById('actionError').style.display = 'none';
+  document.getElementById('actionSuccess').style.display = 'none';
+  new bootstrap.Modal(document.getElementById('actionModal')).show();
+}
+
+function statusClass(s) {
+  const m = { APPROVED:'active', ISSUED:'verified', REJECTED:'rejected', SUSPENDED:'pending',
+    REVOKED:'revoked', ACTIVE:'active', UNDER_REVIEW:'pending', SUBMITTED:'pending', DRAFT:'pending' };
+  return m[s] || 'pending';
+}
+
+async function confirmAction() {
+  if (!currentAction) return;
+  const reason = document.getElementById('actionReason').value.trim();
+  const errEl  = document.getElementById('actionError');
+  const sucEl  = document.getElementById('actionSuccess');
+  errEl.style.display = 'none';
+
+  if (!reason) {
+    document.getElementById('actionErrorMsg').textContent = 'A reason is required.';
+    errEl.style.display = 'flex'; return;
+  }
+
+  const btn = document.getElementById('actionConfirmBtn');
+  btn.disabled = true; btn.textContent = 'Processing…';
+
+  try {
+    if (currentAction.type === 'application') {
+      const cfg = ACTION_CONFIG[currentAction.actionType];
+      await apiFetch(`/id-applications/${currentAction.id}/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: cfg.newStatus, decision_reason: reason }),
+      });
+      document.getElementById('actionSuccessMsg').textContent =
+        `Application status updated to ${cfg.newStatus.replace(/_/g,' ')}.`;
+    } else {
+      const cfg = ID_ACTION_CONFIG[currentAction.actionType];
+      await apiFetch(`/issued-ids/${currentAction.id}/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: cfg.newStatus }),
+      });
+      document.getElementById('actionSuccessMsg').textContent =
+        `ID credential ${cfg.newStatus.toLowerCase()}.`;
+    }
+
+    sucEl.style.display = 'flex';
+    setTimeout(() => {
+      bootstrap.Modal.getInstance(document.getElementById('actionModal')).hide();
+      loadData();
+    }, 1200);
+
+  } catch (err) {
+    document.getElementById('actionErrorMsg').textContent = `Failed: ${err.message}`;
+    errEl.style.display = 'flex';
+    btn.disabled = false;
+    btn.textContent = currentAction.type === 'application'
+      ? ACTION_CONFIG[currentAction.actionType].btnLabel
+      : ID_ACTION_CONFIG[currentAction.actionType].btnLabel;
+  }
+}
+
+// ── LOAD DATA ────────────────────────────────────────────────────
+function loadData() {
+  apiFetch('/id-applications/').then(data => {
+    allApps = Array.isArray(data) ? data : (data.results || []);
+    const pending = allApps.filter(a => ['DRAFT','SUBMITTED','UNDER_REVIEW'].includes(a.status)).length;
+    document.getElementById('total-count').textContent = allApps.length;
+    document.getElementById('stat-draft').textContent    = allApps.filter(a => a.status==='DRAFT').length;
+    document.getElementById('stat-submitted').textContent = allApps.filter(a => a.status==='SUBMITTED').length;
+    document.getElementById('stat-review').textContent   = allApps.filter(a => a.status==='UNDER_REVIEW').length;
+    document.getElementById('stat-approved').textContent = allApps.filter(a => a.status==='APPROVED').length;
+    document.getElementById('stat-rejected').textContent = allApps.filter(a => a.status==='REJECTED').length;
+    document.getElementById('stat-issued').textContent   = allApps.filter(a => a.status==='ISSUED').length;
+    if (pending > 0) {
+      document.getElementById('pending-count').textContent = pending;
+      document.getElementById('pending-alert').style.display = 'flex';
+    }
+    renderApps(allApps);
+  }).catch(() => {
+    document.getElementById('total-count').textContent = '0';
+    document.getElementById('apps-tbody').innerHTML =
+      '<tr><td colspan="8" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
+  });
+
+  apiFetch('/issued-ids/').then(data => {
+    allIDs = Array.isArray(data) ? data : (data.results || []);
+    renderIDs(allIDs);
+  }).catch(() => {
+    document.getElementById('ids-tbody').innerHTML =
+      '<tr><td colspan="6" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
+  });
+}
 
 function renderApps(items) {
   const tbody = document.getElementById('apps-tbody');
-  if (!items.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">No applications match filter</td></tr>'; return; }
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:#8896B0;">No applications match filter</td></tr>';
+    return;
+  }
   tbody.innerHTML = items.map(a => `
     <tr>
       <td class="mono">#${String(a.id).padStart(4,'0')}</td>
-      <td class="mono">#${String(a.person).padStart(4,'0')}</td>
-      <td>${a.application_type.replace(/_/g,' ')}</td>
+      <td>${personThumb(a.person)}</td>
+      <td style="font-size:12px;">${a.application_type.replace(/_/g,' ')}</td>
       <td>${statusBadge(a.status)}</td>
-      <td>${formatDate(a.submitted_at)}</td>
-      <td>${a.reviewed_by ? `User #${a.reviewed_by}` : '<span style="color:#8896B0;">Pending</span>'}</td>
-      <td>${a.state_of_issue || '—'}</td>
+      <td style="font-size:12px;">${formatDate(a.submitted_at)}</td>
+      <td style="font-size:12px;">${a.reviewed_by ? `User #${a.reviewed_by}` : '<span style="color:#8896B0;">—</span>'}</td>
+      <td style="font-size:12px;">${a.state_of_issue || '—'}</td>
+      <td>${appActionButtons(a)}</td>
     </tr>`).join('');
 }
 
-function filterByStatus(status) {
-  renderApps(status ? allApps.filter(a => a.status === status) : allApps);
+function renderIDs(items) {
+  const tbody = document.getElementById('ids-tbody');
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#8896B0;">No issued IDs found</td></tr>';
+    return;
+  }
+  const today = new Date();
+  tbody.innerHTML = items.map(i => {
+    const exp  = new Date(i.expiration_date);
+    const days = Math.ceil((exp - today) / 86400000);
+    const daysHtml = i.status === 'ACTIVE'
+      ? (days < 0 ? `<span style="color:var(--danger);font-weight:600;">Expired ${Math.abs(days)}d ago</span>`
+        : days < 30 ? `<span style="color:var(--warning);font-weight:600;">${days}d</span>`
+        : `<span style="color:var(--success);">${days}d</span>`)
+      : '—';
+    return `<tr>
+      <td class="mono">${i.id_number}</td>
+      <td>${personThumb(i.person)}</td>
+      <td style="font-size:12px;">${formatDate(i.issue_date)}</td>
+      <td style="font-size:12px;">${formatDate(i.expiration_date)} ${daysHtml}</td>
+      <td>${statusBadge(i.status)}</td>
+      <td>${idActionButtons(i)}</td>
+    </tr>`;
+  }).join('');
 }
+
+// ── FILTERS ──────────────────────────────────────────────────────
+let activeStatusFilter = '';
+
+function filterByStatus(status) {
+  activeStatusFilter = status;
+  document.querySelectorAll('[id^="pill-"]').forEach(b => {
+    b.className = b.id === `pill-${status || 'all'}` ? 'btn-primary btn-sm' : 'btn-secondary btn-sm';
+  });
+  filterTable();
+}
+
+function filterTable() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const filtered = allApps.filter(a =>
+    (!activeStatusFilter || a.status === activeStatusFilter) &&
+    (!q || String(a.person).includes(q) || String(a.id).includes(q) ||
+      (personMap[a.person] && `${personMap[a.person].first_name} ${personMap[a.person].last_name||''}`.toLowerCase().includes(q)))
+  );
+  renderApps(filtered);
+}
+
+loadData();
 </script>
 </body>
 </html>
