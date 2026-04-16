@@ -7,14 +7,6 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <!--
-    Classes previously defined inline here have been moved to styles.css:
-      .eligibility-result (.eligible, .ineligible, .registered)
-      .eligibility-icon
-      .restore-form, .felony-form
-      .action-header, .action-header-felony, .action-header-restore
-      .tab-btn, .tab-btn.active (FIX: .active now has gold border-bottom in styles.css)
-  -->
   <link href="/static/styles.css" rel="stylesheet" />
 </head>
 <body>
@@ -56,7 +48,6 @@
             <input type="number" class="form-control-gov" id="check-person-id" placeholder="e.g. 1" style="flex:1;" />
             <button class="btn-primary" onclick="checkEligibility()" style="white-space:nowrap;"><i class="bi bi-search me-1"></i>Check</button>
           </div>
-          <!-- .eligibility-result and modifiers (.eligible, .ineligible, .registered) in styles.css -->
           <div class="eligibility-result" id="eligibility-result">
             <div class="eligibility-icon" id="elig-icon">&#8212;</div>
             <div style="font-family:var(--font-display);font-size:16px;font-weight:600;" id="elig-name">&#8212;</div>
@@ -97,10 +88,7 @@
 
     <!-- RIGHT: FELONY + RESTORATION -->
     <div class="col-lg-7">
-
-      <!-- .felony-form defined in styles.css -->
       <div class="felony-form mb-4">
-        <!-- .action-header-felony now in styles.css (was missing before — FIX) -->
         <div class="action-header action-header-felony">
           <i class="bi bi-exclamation-octagon action-header-icon danger"></i>
           <h3 class="action-header-title danger">Flag Felony Conviction</h3>
@@ -123,9 +111,7 @@
         </div>
       </div>
 
-      <!-- .restore-form defined in styles.css -->
       <div class="restore-form">
-        <!-- .action-header-restore now in styles.css (was missing before — FIX) -->
         <div class="action-header action-header-restore">
           <i class="bi bi-arrow-counterclockwise action-header-icon success"></i>
           <h3 class="action-header-title success">Restore Voting Rights</h3>
@@ -150,11 +136,10 @@
     </div>
   </div>
 
-  <!-- REGISTRY TABLE -->
+  <!-- REGISTRY TABLE — now includes Photo column -->
   <div class="data-table-wrapper">
     <div class="table-header">
       <h2><i class="bi bi-check2-square me-2"></i>Voter Registry</h2>
-      <!-- .tab-btn and .tab-btn.active defined in styles.css (FIX: .active now has gold underline) -->
       <div class="table-actions" style="gap:6px;">
         <button class="tab-btn active" id="tab-all"        onclick="filterRegistry('')">All</button>
         <button class="tab-btn"        id="tab-active"     onclick="filterRegistry('ACTIVE')">Active</button>
@@ -164,10 +149,16 @@
     </div>
     <table class="data-table">
       <thead>
-        <tr><th>Reg ID</th><th>Person</th><th>Reg Number</th><th>Party</th><th>County / State</th><th>Status</th><th>Voter ID #</th><th>Felony</th><th>Registered</th></tr>
+        <tr>
+          <th>Reg ID</th>
+          <th style="width:52px;">Photo</th>
+          <th>Person</th>
+          <th>Reg Number</th><th>Party</th><th>County / State</th>
+          <th>Status</th><th>Voter ID #</th><th>Felony</th><th>Registered</th>
+        </tr>
       </thead>
       <tbody id="registry-tbody">
-        <tr><td colspan="9" style="text-align:center;padding:32px;color:#8896B0;">Loading registry...</td></tr>
+        <tr><td colspan="10" style="text-align:center;padding:32px;color:#8896B0;">Loading registry...</td></tr>
       </tbody>
     </table>
   </div>
@@ -184,6 +175,32 @@
 
 <script>
 let allRegistrations = [];
+let personMap = {};
+const MEDIA_BASE = 'http://127.0.0.1:8000';
+
+// Pre-load persons for photo thumbnails
+apiFetch('/persons/')
+  .then(d => { (Array.isArray(d) ? d : (d.results || [])).forEach(p => { personMap[p.id] = p; }); })
+  .catch(() => {});
+
+function buildPhotoUrl(path) {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  return `${MEDIA_BASE}/media/${path.replace(/^\//, '')}`;
+}
+
+function personPhotoCell(personId) {
+  const p = personMap[personId];
+  const THUMB = 'width:32px;height:40px;border-radius:3px;';
+  const placeholder = `<div style="${THUMB}background:var(--light-gray);border:1px solid var(--mid-gray);display:inline-flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:16px;"><i class="bi bi-person"></i></div>`;
+  if (!p) return placeholder;
+  const url = buildPhotoUrl(p.photo);
+  if (!url) return placeholder;
+  const name = `${p.first_name || ''} ${p.last_name || ''}`.trim();
+  return `<img src="${url}" alt="${name}" title="${name}"
+    style="${THUMB}max-width:32px;max-height:40px;object-fit:cover;border:1px solid var(--cobalt);display:block;"
+    onerror="this.style.display='none';" />`;
+}
 
 function loadData() {
   apiFetch('/voter-registrations/').then(data => {
@@ -195,7 +212,8 @@ function loadData() {
     renderRegistry(allRegistrations);
   }).catch(() => {
     document.getElementById('total-registered').textContent = '0';
-    document.getElementById('registry-tbody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
+    document.getElementById('registry-tbody').innerHTML =
+      '<tr><td colspan="10" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
   });
   apiFetch('/voter-ids/').then(data => {
     const items = Array.isArray(data) ? data : (data.results || []);
@@ -206,10 +224,14 @@ function loadData() {
 
 function renderRegistry(items) {
   const tbody = document.getElementById('registry-tbody');
-  if (!items.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:#8896B0;">No records found</td></tr>'; return; }
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:32px;color:#8896B0;">No records found</td></tr>';
+    return;
+  }
   tbody.innerHTML = items.map(r => `
     <tr>
       <td class="mono">#${String(r.id).padStart(4,'0')}</td>
+      <td style="text-align:center;">${personPhotoCell(r.person)}</td>
       <td><strong>${r.person_name || `Person #${r.person}`}</strong></td>
       <td class="mono" style="font-size:12px;">${r.registration_number}</td>
       <td style="font-size:12px;">${r.party_affiliation.replace(/_/g,' ')}</td>
@@ -240,12 +262,14 @@ function checkEligibility() {
   if (!personId) return;
   const resultEl = document.getElementById('eligibility-result');
   resultEl.style.display = 'none';
-  fetch(`http://127.0.0.1:8000/api/voter/eligibility/?person_id=${personId}`, { headers: { 'Authorization': `Bearer ${getToken()}` } })
+  fetch(`http://127.0.0.1:8000/api/voter/eligibility/?person_id=${personId}`, {
+    headers: { 'Authorization': `Bearer ${getToken()}` }
+  })
   .then(res => res.json())
   .then(data => {
     resultEl.style.display = 'block';
     resultEl.className = 'eligibility-result';
-    document.getElementById('elig-name').textContent = data.person_name;
+    document.getElementById('elig-name').textContent    = data.person_name;
     document.getElementById('elig-details').textContent = `Age: ${data.age} \u00b7 Citizenship: ${data.citizenship_status.replace(/_/g,' ')}`;
     if (data.already_registered) {
       resultEl.classList.add('registered');
@@ -291,13 +315,26 @@ function registerVoter() {
   const personId = document.getElementById('reg-person-id').value.trim();
   if (!personId) { document.getElementById('reg-error-msg').textContent='Person ID is required.'; errEl.style.display='flex'; return; }
   fetch('http://127.0.0.1:8000/api/voter/register/', {
-    method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${getToken()}`},
-    body: JSON.stringify({ person_id:parseInt(personId), party_affiliation:document.getElementById('reg-party').value, state:document.getElementById('reg-state').value.trim(), county:document.getElementById('reg-county').value.trim(), precinct:document.getElementById('reg-precinct').value.trim() })
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${getToken()}`},
+    body: JSON.stringify({
+      person_id: parseInt(personId),
+      party_affiliation: document.getElementById('reg-party').value,
+      state:   document.getElementById('reg-state').value.trim(),
+      county:  document.getElementById('reg-county').value.trim(),
+      precinct:document.getElementById('reg-precinct').value.trim()
+    })
   })
   .then(res => res.json().then(d => ({ ok:res.ok, data:d })))
   .then(({ ok, data }) => {
     if (!ok) { document.getElementById('reg-error-msg').textContent=data.error||'Registration failed.'; errEl.style.display='flex'; }
-    else { const reg=data.registration; document.getElementById('reg-success-msg').textContent=`Registered! Reg# ${reg.registration_number} \u00b7 Voter ID: ${reg.voter_id?.voter_id_number||'Issued'}`; sucEl.style.display='flex'; loadData(); }
+    else {
+      const reg = data.registration;
+      document.getElementById('reg-success-msg').textContent =
+        `Registered! Reg# ${reg.registration_number} \u00b7 Voter ID: ${reg.voter_id?.voter_id_number||'Issued'}`;
+      sucEl.style.display='flex';
+      loadData();
+    }
   })
   .catch(() => { document.getElementById('reg-error-msg').textContent='Backend offline.'; errEl.style.display='flex'; });
 }

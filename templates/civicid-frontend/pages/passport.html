@@ -29,37 +29,25 @@
   <div class="row g-3 mb-4">
     <div class="col-sm-6 col-lg-3">
       <div class="passport-stat-card active">
-        <div>
-          <div class="passport-stat-number" id="statActive">—</div>
-          <div class="passport-stat-label">Active</div>
-        </div>
+        <div><div class="passport-stat-number" id="statActive">—</div><div class="passport-stat-label">Active</div></div>
         <i class="bi bi-patch-check-fill passport-stat-icon"></i>
       </div>
     </div>
     <div class="col-sm-6 col-lg-3">
       <div class="passport-stat-card expired">
-        <div>
-          <div class="passport-stat-number" id="statExpired">—</div>
-          <div class="passport-stat-label">Expired</div>
-        </div>
+        <div><div class="passport-stat-number" id="statExpired">—</div><div class="passport-stat-label">Expired</div></div>
         <i class="bi bi-clock-history passport-stat-icon"></i>
       </div>
     </div>
     <div class="col-sm-6 col-lg-3">
       <div class="passport-stat-card revoked">
-        <div>
-          <div class="passport-stat-number" id="statRevoked">—</div>
-          <div class="passport-stat-label">Revoked / Suspended</div>
-        </div>
+        <div><div class="passport-stat-number" id="statRevoked">—</div><div class="passport-stat-label">Revoked / Suspended</div></div>
         <i class="bi bi-slash-circle passport-stat-icon"></i>
       </div>
     </div>
     <div class="col-sm-6 col-lg-3">
       <div class="passport-stat-card total">
-        <div>
-          <div class="passport-stat-number" id="statTotal">—</div>
-          <div class="passport-stat-label">Total Records</div>
-        </div>
+        <div><div class="passport-stat-number" id="statTotal">—</div><div class="passport-stat-label">Total Records</div></div>
         <i class="bi bi-journals passport-stat-icon"></i>
       </div>
     </div>
@@ -74,7 +62,7 @@
     <button class="btn-secondary btn-sm filter-pill" data-filter="REVOKED">Revoked</button>
     <button class="btn-secondary btn-sm filter-pill" data-filter="SUSPENDED">Suspended</button>
     <button class="btn-secondary btn-sm filter-pill" data-filter="LOST">Lost/Stolen</button>
-    <input type="text" id="searchInput" class="passport-search" placeholder="Search name or number&hellip;" aria-label="Search passports"/>
+    <input type="text" id="searchInput" class="passport-search" placeholder="Search name or number&hellip;" />
   </div>
 
   <!-- Table -->
@@ -85,6 +73,7 @@
     <table class="data-table" id="passportTable">
       <thead>
         <tr>
+          <th style="width:52px;">Photo</th>
           <th>Passport #</th>
           <th>Holder</th>
           <th>Type</th>
@@ -96,7 +85,7 @@
         </tr>
       </thead>
       <tbody id="passportBody">
-        <tr><td colspan="8" class="text-center text-muted py-4">Loading&hellip;</td></tr>
+        <tr><td colspan="9" class="text-center text-muted py-4">Loading&hellip;</td></tr>
       </tbody>
     </table>
   </div>
@@ -104,46 +93,46 @@
 </div>
 
 <!-- Issue Passport Modal -->
-<div class="modal fade" id="issueModal" tabindex="-1" aria-labelledby="issueModalLabel">
+<div class="modal fade" id="issueModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="issueModalLabel"><i class="bi bi-passport me-2"></i>Issue New Passport</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h5 class="modal-title"><i class="bi bi-passport me-2"></i>Issue New Passport</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <div id="issueAlert" class="alert d-none" role="alert"></div>
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label" for="inPersonId">Person ID <span class="text-danger">*</span></label>
+            <label class="form-label">Person ID <span class="text-danger">*</span></label>
             <input type="number" class="form-control" id="inPersonId" placeholder="Person's database ID"/>
           </div>
           <div class="col-md-6">
-            <label class="form-label" for="inPassportNumber">Passport Number <span class="text-danger">*</span></label>
+            <label class="form-label">Passport Number <span class="text-danger">*</span></label>
             <input type="text" class="form-control" id="inPassportNumber" placeholder="e.g. US1234567"/>
           </div>
           <div class="col-md-6">
-            <label class="form-label" for="inPassportType">Passport Type</label>
-            <select class="form-select" id="inPassportType" aria-label="Passport Type">
+            <label class="form-label">Passport Type</label>
+            <select class="form-select" id="inPassportType">
               <option value="REGULAR">Regular</option>
               <option value="OFFICIAL">Official</option>
               <option value="DIPLOMATIC">Diplomatic</option>
             </select>
           </div>
           <div class="col-md-6">
-            <label class="form-label" for="inIssuingAuthority">Issuing Authority</label>
+            <label class="form-label">Issuing Authority</label>
             <input type="text" class="form-control" id="inIssuingAuthority" value="U.S. Department of State"/>
           </div>
           <div class="col-md-6">
-            <label class="form-label" for="inIssueDate">Issue Date <span class="text-danger">*</span></label>
-            <input type="date" class="form-control" id="inIssueDate" aria-label="Issue Date"/>
+            <label class="form-label">Issue Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" id="inIssueDate"/>
           </div>
           <div class="col-md-6">
-            <label class="form-label" for="inExpirationDate">Expiration Date <span class="text-danger">*</span></label>
-            <input type="date" class="form-control" id="inExpirationDate" aria-label="Expiration Date"/>
+            <label class="form-label">Expiration Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" id="inExpirationDate"/>
           </div>
           <div class="col-12">
-            <label class="form-label" for="inNotes">Notes</label>
+            <label class="form-label">Notes</label>
             <textarea class="form-control" id="inNotes" rows="2" placeholder="Optional remarks&hellip;"></textarea>
           </div>
         </div>
@@ -159,18 +148,18 @@
 </div>
 
 <!-- Update Status Modal -->
-<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel">
+<div class="modal fade" id="statusModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="statusModalLabel"><i class="bi bi-pencil-square me-2"></i>Update Passport Status</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Update Passport Status</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <div id="statusAlert" class="alert d-none" role="alert"></div>
         <p class="text-muted small mb-3">Passport: <strong id="statusPassportNum"></strong></p>
-        <label class="form-label" for="newStatus">New Status</label>
-        <select class="form-select" id="newStatus" aria-label="New Passport Status">
+        <label class="form-label">New Status</label>
+        <select class="form-select" id="newStatus">
           <option value="ACTIVE">Active</option>
           <option value="EXPIRED">Expired</option>
           <option value="REVOKED">Revoked</option>
@@ -199,21 +188,42 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  const API = '/api/passports/';
+  const MEDIA_BASE = 'http://127.0.0.1:8000';
   let allPassports = [];
+  let personMap    = {};
   let activeFilter = 'ALL';
 
+  // Pre-load all persons so we can show photo thumbnails
+  apiFetch('/persons/')
+    .then(d => { (Array.isArray(d) ? d : (d.results || [])).forEach(p => { personMap[p.id] = p; }); })
+    .catch(() => {});
+
+  function buildPhotoUrl(path) {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    return `${MEDIA_BASE}/media/${path.replace(/^\//, '')}`;
+  }
+
+  function passportPhotoCell(personId) {
+    const p = personMap[personId];
+    const THUMB = 'width:32px;height:40px;border-radius:3px;object-fit:cover;border:1px solid var(--cobalt);display:block;max-width:32px;max-height:40px;';
+    const placeholder = `<div style="width:32px;height:40px;background:var(--light-gray);border:1px solid var(--mid-gray);border-radius:3px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:16px;"><i class="bi bi-person"></i></div>`;
+    if (!p) return placeholder;
+    const url = buildPhotoUrl(p.photo);
+    if (!url) return placeholder;
+    const name = `${p.first_name || ''} ${p.last_name || ''}`.trim();
+    return `<img src="${url}" alt="${name}" title="${name}" style="${THUMB}" onerror="this.style.display='none';" />`;
+  }
+
   async function loadPassports() {
-    const token = getToken();
     try {
-      const res = await fetch(API, { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error('Failed to load');
-      allPassports = await res.json();
+      const data = await apiFetch('/passports/');
+      allPassports = Array.isArray(data) ? data : (data.results || []);
       renderStats(allPassports);
       renderTable(allPassports);
     } catch (e) {
       document.getElementById('passportBody').innerHTML =
-        '<tr><td colspan="8" class="text-center text-danger py-4">Error loading passports — is the backend running?</td></tr>';
+        '<tr><td colspan="9" class="text-center text-danger py-4">Error loading passports — is the backend running?</td></tr>';
     }
   }
 
@@ -225,7 +235,7 @@
   }
 
   function passportStatusBadge(s) {
-    const map = { ACTIVE: 'active', EXPIRED: 'rejected', REVOKED: 'revoked', SUSPENDED: 'rejected', LOST: 'pending' };
+    const map = { ACTIVE:'active', EXPIRED:'rejected', REVOKED:'revoked', SUSPENDED:'rejected', LOST:'pending' };
     return `<span class="status-badge ${map[s] || 'pending'}">${s}</span>`;
   }
 
@@ -248,11 +258,12 @@
 
     const tbody = document.getElementById('passportBody');
     if (!filtered.length) {
-      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No passports found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No passports found.</td></tr>';
       return;
     }
     tbody.innerHTML = filtered.map(p => `
       <tr>
+        <td style="text-align:center;">${passportPhotoCell(p.person)}</td>
         <td class="mono">${p.passport_number}</td>
         <td>${p.person_name || '&mdash;'}</td>
         <td>${p.passport_type}</td>
@@ -271,9 +282,7 @@
   // Filter pills
   document.querySelectorAll('.filter-pill').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-pill').forEach(b => {
-        b.className = 'btn-secondary btn-sm filter-pill';
-      });
+      document.querySelectorAll('.filter-pill').forEach(b => { b.className = 'btn-secondary btn-sm filter-pill'; });
       btn.className = 'btn-primary btn-sm filter-pill';
       activeFilter = btn.dataset.filter;
       renderTable(allPassports);
@@ -284,7 +293,6 @@
 
   // Issue passport
   document.getElementById('submitIssueBtn').addEventListener('click', async () => {
-    const token = getToken();
     const alertEl = document.getElementById('issueAlert');
     const payload = {
       person:            parseInt(document.getElementById('inPersonId').value),
@@ -296,12 +304,7 @@
       notes:             document.getElementById('inNotes').value.trim(),
     };
     try {
-      const res = await fetch(API, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) { const err = await res.json(); throw new Error(JSON.stringify(err)); }
+      await apiFetch('/passports/', { method: 'POST', body: JSON.stringify(payload) });
       alertEl.className = 'alert alert-success';
       alertEl.textContent = 'Passport issued successfully.';
       alertEl.classList.remove('d-none');
@@ -325,16 +328,10 @@
   }
 
   document.getElementById('submitStatusBtn').addEventListener('click', async () => {
-    const token   = getToken();
     const id      = document.getElementById('statusPassportId').value;
     const alertEl = document.getElementById('statusAlert');
     try {
-      const res = await fetch(`${API}${id}/`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: document.getElementById('newStatus').value })
-      });
-      if (!res.ok) throw new Error('Update failed');
+      await apiFetch(`/passports/${id}/`, { method: 'PATCH', body: JSON.stringify({ status: document.getElementById('newStatus').value }) });
       alertEl.className = 'alert alert-success';
       alertEl.textContent = 'Status updated.';
       alertEl.classList.remove('d-none');

@@ -6,11 +6,32 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <!--
-    .person-thumb, .person-thumb-placeholder, .id-cell
-    were previously inline here. Now defined in styles.css.
-  -->
   <link href="/static/styles.css" rel="stylesheet" />
+  <style>
+    /* ── PHOTO UPLOAD PREVIEW ── */
+    .photo-upload-zone {
+      border: 2px dashed var(--mid-gray);
+      border-radius: 4px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--off-white);
+      position: relative;
+    }
+    .photo-upload-zone:hover { border-color: var(--cobalt); background: var(--cobalt-glow); }
+    .photo-upload-zone.has-photo { border-color: var(--cobalt); border-style: solid; padding: 0; overflow: hidden; }
+    .photo-upload-zone img { width: 100%; height: 160px; object-fit: cover; display: block; }
+    .photo-upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .photo-upload-icon { font-size: 28px; color: var(--mid-gray); display: block; margin-bottom: 6px; }
+    .photo-upload-label { font-family: var(--font-display); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); }
+    .photo-upload-zone.has-photo .photo-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center;
+      justify-content: center; opacity: 0; transition: opacity 0.2s;
+    }
+    .photo-upload-zone.has-photo:hover .photo-overlay { opacity: 1; }
+    .photo-overlay span { color: white; font-family: var(--font-display); font-size: 11px; letter-spacing: 1.5px; }
+  </style>
 </head>
 <body>
 <script src="/static/civic.js"></script>
@@ -26,6 +47,7 @@
     <div class="hero-meta">TOTAL RECORDS: <span id="total-count" style="color:var(--gold-light);">Loading...</span></div>
   </div>
 
+  <!-- ── ADD PERSON CARD ── -->
   <div class="content-card mb-4" id="addPersonCard" style="display:none;">
     <div class="card-header" style="justify-content:space-between;">
       <h3><i class="bi bi-person-plus me-1"></i>Register New Person</h3>
@@ -35,38 +57,79 @@
       <div class="alert-banner info mb-3" style="font-size:12px;">
         <i class="bi bi-shield-check"></i>
         Only <strong>REGISTRAR</strong>, <strong>SUPER_ADMIN</strong>, and <strong>DMV</strong> roles may register new persons.
-        <strong>Persons aged 16+ will automatically receive a draft ID application.</strong>
+        <strong>Persons aged 16+ receive a draft ID application. Citizens aged 18+ are auto-registered to vote.</strong>
       </div>
       <div class="row g-3">
-        <div class="col-md-4"><label class="form-label">First Name *</label><input type="text" class="form-control-gov" id="new-first" /></div>
-        <div class="col-md-4"><label class="form-label">Middle Name</label><input type="text" class="form-control-gov" id="new-middle" /></div>
-        <div class="col-md-3"><label class="form-label">Last Name</label><input type="text" class="form-control-gov" id="new-last" /></div>
-        <div class="col-md-1"><label class="form-label">Suffix</label><input type="text" class="form-control-gov" id="new-suffix" /></div>
-        <div class="col-md-3"><label class="form-label">Gender *</label>
-          <select class="form-control-gov" id="new-gender"><option value="MALE">Male</option><option value="FEMALE">Female</option><option value="OTHER">Other / Not Specified</option></select></div>
-        <div class="col-md-3"><label class="form-label">Date of Birth *</label><input type="date" class="form-control-gov" id="new-dob" /></div>
-        <div class="col-md-3"><label class="form-label">Citizenship *</label>
-          <select class="form-control-gov" id="new-citizenship"><option value="CITIZEN">Citizen</option><option value="PERMANENT_RESIDENT">Permanent Resident</option><option value="VISA_HOLDER">Visa Holder</option><option value="UNDOCUMENTED_ALIEN">Undocumented Alien</option><option value="OTHER">Other</option></select></div>
-        <div class="col-md-3"><label class="form-label">Maiden Name</label><input type="text" class="form-control-gov" id="new-maiden" /></div>
-        <div class="col-md-4"><label class="form-label">City of Birth *</label><input type="text" class="form-control-gov" id="new-city" /></div>
-        <div class="col-md-4"><label class="form-label">State of Birth</label><input type="text" class="form-control-gov" id="new-state" /></div>
-        <div class="col-md-4"><label class="form-label">Country of Birth</label><input type="text" class="form-control-gov" id="new-country" value="USA" /></div>
-        <div class="col-12"><hr style="border-color:var(--light-gray);" />
-          <div style="font-family:var(--font-display);font-size:11px;letter-spacing:1.5px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Current Address (Optional)</div></div>
+
+        <!-- PHOTO UPLOAD — full-height left column -->
+        <div class="col-md-2">
+          <label class="form-label">Profile Photo</label>
+          <div class="photo-upload-zone" id="photoUploadZone" onclick="document.getElementById('new-photo').click()">
+            <input type="file" id="new-photo" accept="image/*" style="display:none;" onchange="previewPhoto(this)" />
+            <i class="bi bi-camera photo-upload-icon" id="photoIcon"></i>
+            <div class="photo-upload-label" id="photoLabel">Click to upload<br/>photo</div>
+            <img id="photoPreview" src="" alt="" style="display:none;width:100%;height:160px;object-fit:cover;border-radius:3px;" />
+            <div class="photo-overlay"><span><i class="bi bi-camera me-1"></i>Change Photo</span></div>
+          </div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;text-align:center;">Max 5MB · JPG/PNG</div>
+        </div>
+
+        <!-- IDENTITY FIELDS -->
+        <div class="col-md-10">
+          <div class="row g-3">
+            <div class="col-md-4"><label class="form-label">First Name *</label><input type="text" class="form-control-gov" id="new-first" /></div>
+            <div class="col-md-4"><label class="form-label">Middle Name</label><input type="text" class="form-control-gov" id="new-middle" /></div>
+            <div class="col-md-3"><label class="form-label">Last Name</label><input type="text" class="form-control-gov" id="new-last" /></div>
+            <div class="col-md-1"><label class="form-label">Suffix</label><input type="text" class="form-control-gov" id="new-suffix" /></div>
+            <div class="col-md-3"><label class="form-label">Gender *</label>
+              <select class="form-control-gov" id="new-gender">
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other / Not Specified</option>
+              </select>
+            </div>
+            <div class="col-md-3"><label class="form-label">Date of Birth *</label><input type="date" class="form-control-gov" id="new-dob" /></div>
+            <div class="col-md-3"><label class="form-label">Citizenship *</label>
+              <select class="form-control-gov" id="new-citizenship">
+                <option value="CITIZEN">Citizen</option>
+                <option value="PERMANENT_RESIDENT">Permanent Resident</option>
+                <option value="VISA_HOLDER">Visa Holder</option>
+                <option value="UNDOCUMENTED_ALIEN">Undocumented Alien</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div class="col-md-3"><label class="form-label">Maiden Name</label><input type="text" class="form-control-gov" id="new-maiden" /></div>
+            <div class="col-md-4"><label class="form-label">City of Birth *</label><input type="text" class="form-control-gov" id="new-city" /></div>
+            <div class="col-md-4"><label class="form-label">State of Birth</label><input type="text" class="form-control-gov" id="new-state" /></div>
+            <div class="col-md-4"><label class="form-label">Country of Birth</label><input type="text" class="form-control-gov" id="new-country" value="USA" /></div>
+          </div>
+        </div>
+
+        <!-- ADDRESS — full width -->
+        <div class="col-12">
+          <hr style="border-color:var(--light-gray);" />
+          <div style="font-family:var(--font-display);font-size:11px;letter-spacing:1.5px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">
+            Current Address (Optional)
+          </div>
+        </div>
         <div class="col-md-5"><label class="form-label">Street</label><input type="text" class="form-control-gov" id="new-street" /></div>
         <div class="col-md-3"><label class="form-label">City</label><input type="text" class="form-control-gov" id="new-addr-city" /></div>
         <div class="col-md-2"><label class="form-label">State</label><input type="text" class="form-control-gov" id="new-addr-state" /></div>
         <div class="col-md-2"><label class="form-label">ZIP</label><input type="text" class="form-control-gov" id="new-addr-zip" /></div>
+
+        <!-- SUBMIT -->
         <div class="col-12">
           <div id="add-error" class="alert-banner danger" style="display:none;"><i class="bi bi-exclamation-triangle"></i><span id="add-error-msg"></span></div>
-          <div id="add-success" class="alert-banner info" style="display:none;"><i class="bi bi-check-circle"></i>Person registered. If aged 16+, a draft ID application was created automatically.</div>
+          <div id="add-success" class="alert-banner info" style="display:none;"><i class="bi bi-check-circle"></i><span id="add-success-msg">Person registered successfully.</span></div>
           <button class="btn-primary" onclick="addPerson()"><i class="bi bi-save me-2"></i>Register Person</button>
           <button class="btn-secondary ms-2" onclick="document.getElementById('addPersonCard').style.display='none'">Cancel</button>
         </div>
+
       </div>
     </div>
   </div>
 
+  <!-- ── PERSONS TABLE ── -->
   <div class="data-table-wrapper">
     <div class="table-header">
       <h2><i class="bi bi-people me-2"></i>Identity Records</h2>
@@ -76,8 +139,10 @@
         <select id="filter-citizenship" onchange="filterTable()"
           style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 10px;border-radius:3px;font-size:12px;">
           <option value="">All Citizenship</option>
-          <option value="CITIZEN">Citizen</option><option value="PERMANENT_RESIDENT">Permanent Resident</option>
-          <option value="VISA_HOLDER">Visa Holder</option><option value="UNDOCUMENTED_ALIEN">Undocumented Alien</option>
+          <option value="CITIZEN">Citizen</option>
+          <option value="PERMANENT_RESIDENT">Permanent Resident</option>
+          <option value="VISA_HOLDER">Visa Holder</option>
+          <option value="UNDOCUMENTED_ALIEN">Undocumented Alien</option>
         </select>
         <button class="btn-primary btn-sm" onclick="showAddPanel()">+ Register Person</button>
       </div>
@@ -85,7 +150,6 @@
     <table class="data-table">
       <thead>
         <tr>
-          <!-- .id-cell, .person-thumb, .person-thumb-placeholder now in styles.css -->
           <th style="min-width:100px;">Photo / ID</th>
           <th>Full Name</th><th>Gender</th><th>Date of Birth</th>
           <th>Place of Birth</th><th>Citizenship</th><th>Status</th><th>Registered</th><th>Actions</th>
@@ -97,6 +161,7 @@
     </table>
   </div>
 
+  <!-- ── RECENT EDITS AUDIT ── -->
   <div class="content-card mt-4">
     <div class="card-header">
       <h3><i class="bi bi-clock-history me-1"></i>Recent Person Record Changes</h3>
@@ -124,31 +189,59 @@ let allPersons = [];
 const CAN_EDIT   = ['SUPER_ADMIN', 'REGISTRAR', 'DMV'];
 const MEDIA_BASE = 'http://127.0.0.1:8000';
 
+// ── PHOTO PREVIEW ────────────────────────────────────────────────
+function previewPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) {
+    alert('Photo must be under 5MB.'); input.value = ''; return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const zone    = document.getElementById('photoUploadZone');
+    const preview = document.getElementById('photoPreview');
+    const icon    = document.getElementById('photoIcon');
+    const label   = document.getElementById('photoLabel');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    icon.style.display    = 'none';
+    label.style.display   = 'none';
+    zone.classList.add('has-photo');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── URL BUILDER ──────────────────────────────────────────────────
 function buildPhotoUrl(path) {
   if (!path) return null;
   if (path.startsWith('http')) return path;
   return `${MEDIA_BASE}/media/${path.replace(/^\//, '')}`;
 }
 
-// personThumb — photo sits over a always-present icon fallback.
-// No onerror innerHTML tricks — avoids quote-escaping artifacts in the DOM.
+// ── PERSON THUMB ─────────────────────────────────────────────────
 function personThumb(person) {
   const url = buildPhotoUrl(person.photo);
   const id  = `#${String(person.id).padStart(4, '0')}`;
   const THUMB = 'width:36px;height:45px;border-radius:3px;flex-shrink:0;';
-  const PLACEHOLDER = `<div style="${THUMB}background:var(--light-gray);border:2px solid var(--mid-gray);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:16px;"><i class="bi bi-person"></i></div>`;
+  const placeholder = `<div style="${THUMB}background:var(--light-gray);border:2px solid var(--mid-gray);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:16px;"><i class="bi bi-person"></i></div>`;
   const imgHtml = url
     ? `<img src="${url}" alt="" style="${THUMB}max-width:36px;max-height:45px;object-fit:cover;border:2px solid var(--cobalt);display:block;" onerror="this.style.display='none';" />`
-    : PLACEHOLDER;
+    : placeholder;
   return `<div style="display:flex;align-items:center;gap:8px;min-width:90px;">${imgHtml}<span class="mono">${id}</span></div>`;
 }
 
+// ── SHOW ADD PANEL ───────────────────────────────────────────────
 function showAddPanel() {
-  if (!CAN_EDIT.includes(getAgency())) { alert(`Your role (${getAgency()}) is not authorized to add persons.`); return; }
+  if (!CAN_EDIT.includes(getAgency())) {
+    alert(`Your role (${getAgency()}) is not authorized to add persons.`); return;
+  }
   document.getElementById('addPersonCard').style.display = 'block';
-  window.scrollTo(0, 0);
+  document.getElementById('add-error').style.display   = 'none';
+  document.getElementById('add-success').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ── LOAD PERSONS ─────────────────────────────────────────────────
 function loadPersons() {
   apiFetch('/persons/').then(data => {
     allPersons = Array.isArray(data) ? data : (data.results || []);
@@ -156,14 +249,19 @@ function loadPersons() {
     renderTable(allPersons);
   }).catch(() => {
     document.getElementById('total-count').textContent = '0';
-    document.getElementById('persons-tbody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
+    document.getElementById('persons-tbody').innerHTML =
+      '<tr><td colspan="9" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
   });
 }
 
+// ── RENDER TABLE ─────────────────────────────────────────────────
 function renderTable(items) {
-  const tbody = document.getElementById('persons-tbody');
+  const tbody   = document.getElementById('persons-tbody');
   const canEdit = CAN_EDIT.includes(getAgency());
-  if (!items.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:#8896B0;">No records found</td></tr>'; return; }
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:#8896B0;">No records found</td></tr>';
+    return;
+  }
   const gIcon = { MALE: '\u2642', FEMALE: '\u2640', OTHER: '\u2295' };
   tbody.innerHTML = items.map(p => `
     <tr>
@@ -183,6 +281,7 @@ function renderTable(items) {
     </tr>`).join('');
 }
 
+// ── FILTER TABLE ─────────────────────────────────────────────────
 function filterTable() {
   const q  = document.getElementById('search-input').value.toLowerCase();
   const cs = document.getElementById('filter-citizenship').value;
@@ -193,62 +292,150 @@ function filterTable() {
   }));
 }
 
-function addPerson() {
+// ── ADD PERSON ───────────────────────────────────────────────────
+// Uses multipart/form-data so the photo file is uploaded in the same
+// request as the person record. The PersonPhoto signal on the backend
+// will set Person.photo automatically.
+async function addPerson() {
   const errEl = document.getElementById('add-error');
+  const sucEl = document.getElementById('add-success');
   errEl.style.display = 'none';
-  document.getElementById('add-success').style.display = 'none';
-  if (!CAN_EDIT.includes(getAgency())) { document.getElementById('add-error-msg').textContent=`Role ${getAgency()} cannot add persons.`; errEl.style.display='flex'; return; }
-  const body = {
-    first_name: document.getElementById('new-first').value.trim(),
-    middle_name: document.getElementById('new-middle').value.trim()||null,
-    last_name: document.getElementById('new-last').value.trim()||null,
-    suffix: document.getElementById('new-suffix').value.trim()||null,
-    gender: document.getElementById('new-gender').value,
-    maiden_name: document.getElementById('new-maiden').value.trim()||null,
-    date_of_birth: document.getElementById('new-dob').value,
-    place_of_birth_city: document.getElementById('new-city').value.trim(),
-    place_of_birth_state: document.getElementById('new-state').value.trim()||null,
-    place_of_birth_country: document.getElementById('new-country').value.trim()||'USA',
-    citizenship_status: document.getElementById('new-citizenship').value,
-    address_street: document.getElementById('new-street').value.trim()||null,
-    address_city: document.getElementById('new-addr-city').value.trim()||null,
-    address_state: document.getElementById('new-addr-state').value.trim()||null,
-    address_zip: document.getElementById('new-addr-zip').value.trim()||null,
-  };
-  if (!body.first_name||!body.date_of_birth||!body.place_of_birth_city) {
-    document.getElementById('add-error-msg').textContent='First name, date of birth, and city of birth are required.';
-    errEl.style.display='flex'; return;
+  sucEl.style.display = 'none';
+
+  if (!CAN_EDIT.includes(getAgency())) {
+    document.getElementById('add-error-msg').textContent = `Role ${getAgency()} cannot add persons.`;
+    errEl.style.display = 'flex'; return;
   }
-  apiFetch('/persons/', { method:'POST', body:JSON.stringify(body) })
-  .then(p => {
-    allPersons.unshift(p);
+
+  const firstName = document.getElementById('new-first').value.trim();
+  const dob       = document.getElementById('new-dob').value;
+  const city      = document.getElementById('new-city').value.trim();
+
+  if (!firstName || !dob || !city) {
+    document.getElementById('add-error-msg').textContent = 'First name, date of birth, and city of birth are required.';
+    errEl.style.display = 'flex'; return;
+  }
+
+  // Build FormData so we can include the photo file
+  const fd = new FormData();
+  fd.append('first_name',             firstName);
+  fd.append('middle_name',            document.getElementById('new-middle').value.trim() || '');
+  fd.append('last_name',              document.getElementById('new-last').value.trim()   || '');
+  fd.append('suffix',                 document.getElementById('new-suffix').value.trim() || '');
+  fd.append('gender',                 document.getElementById('new-gender').value);
+  fd.append('maiden_name',            document.getElementById('new-maiden').value.trim() || '');
+  fd.append('date_of_birth',          dob);
+  fd.append('place_of_birth_city',    city);
+  fd.append('place_of_birth_state',   document.getElementById('new-state').value.trim()      || '');
+  fd.append('place_of_birth_country', document.getElementById('new-country').value.trim()    || 'USA');
+  fd.append('citizenship_status',     document.getElementById('new-citizenship').value);
+  fd.append('address_street',         document.getElementById('new-street').value.trim()     || '');
+  fd.append('address_city',           document.getElementById('new-addr-city').value.trim()  || '');
+  fd.append('address_state',          document.getElementById('new-addr-state').value.trim() || '');
+  fd.append('address_zip',            document.getElementById('new-addr-zip').value.trim()   || '');
+
+  // Attach photo if one was chosen
+  const photoFile = document.getElementById('new-photo').files[0];
+  if (photoFile) {
+    fd.append('photo', photoFile);
+  }
+
+  try {
+    // Use raw fetch for multipart — apiFetch forces Content-Type: application/json
+    const token    = localStorage.getItem('civic_access');
+    const csrfEl   = document.cookie.match(/csrftoken=([^;]+)/);
+    const csrf     = csrfEl ? csrfEl[1] : '';
+    const headers  = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (csrf)  headers['X-CSRFToken']   = csrf;
+    // NOTE: Do NOT set Content-Type when sending FormData —
+    //       the browser sets it automatically with the correct boundary.
+
+    const res = await fetch('http://127.0.0.1:8000/api/persons/', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers,
+      body: fd,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(JSON.stringify(err));
+    }
+
+    const newPerson = await res.json();
+
+    // If a photo was uploaded, also save it to PersonPhoto history
+    if (photoFile) {
+      const pfd = new FormData();
+      pfd.append('person',     newPerson.id);
+      pfd.append('photo',      photoFile);
+      pfd.append('is_current', 'true');
+      pfd.append('purpose',    'REGISTRATION');
+      await fetch('http://127.0.0.1:8000/api/person-photos/', {
+        method: 'POST', credentials: 'same-origin', headers, body: pfd,
+      }).catch(() => {}); // non-fatal if photo history fails
+    }
+
+    // Build success message — note auto-voter-registration if applicable
+    const dobj    = new Date(dob);
+    const today   = new Date();
+    const ageYrs  = Math.floor((today - dobj) / 31557600000);
+    const isCitizen = document.getElementById('new-citizenship').value === 'CITIZEN';
+    let successMsg = `Person #${newPerson.id} registered successfully.`;
+    if (ageYrs >= 16) successMsg += ' Draft ID application created.';
+    if (ageYrs >= 18 && isCitizen) successMsg += ' Auto-registered to vote ✓';
+
+    document.getElementById('add-success-msg').textContent = successMsg;
+    sucEl.style.display = 'flex';
+
+    // Reset form
+    ['new-first','new-middle','new-last','new-suffix','new-maiden','new-dob',
+     'new-city','new-state','new-street','new-addr-city','new-addr-state','new-addr-zip'
+    ].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('new-gender').value      = 'MALE';
+    document.getElementById('new-citizenship').value = 'CITIZEN';
+    document.getElementById('new-country').value     = 'USA';
+    document.getElementById('new-photo').value        = '';
+    const zone = document.getElementById('photoUploadZone');
+    zone.classList.remove('has-photo');
+    document.getElementById('photoPreview').style.display = 'none';
+    document.getElementById('photoIcon').style.display    = '';
+    document.getElementById('photoLabel').style.display   = '';
+
+    // Refresh list and audit
+    allPersons.unshift(newPerson);
     renderTable(allPersons);
     document.getElementById('total-count').textContent = allPersons.length.toLocaleString();
-    document.getElementById('add-success').style.display = 'flex';
-    ['new-first','new-middle','new-last','new-suffix','new-maiden','new-dob','new-city','new-state','new-street','new-addr-city','new-addr-state','new-addr-zip'].forEach(id => { document.getElementById(id).value=''; });
-    document.getElementById('new-gender').value='MALE';
-    document.getElementById('new-citizenship').value='CITIZEN';
-    document.getElementById('new-country').value='USA';
     loadEditAudit();
-  })
-  .catch(err => { document.getElementById('add-error-msg').textContent=`Failed: ${err.message}`; errEl.style.display='flex'; });
+
+  } catch (err) {
+    document.getElementById('add-error-msg').textContent = `Failed: ${err.message}`;
+    errEl.style.display = 'flex';
+  }
 }
 
+// ── LOAD EDIT AUDIT ──────────────────────────────────────────────
 function loadEditAudit() {
   apiFetch('/audit-logs/').then(data => {
-    const items=(Array.isArray(data)?data:(data.results||[])).filter(l=>['PERSON_EDIT','CREATE'].includes(l.action_type)).slice(0,10);
-    const tbody=document.getElementById('edit-audit-tbody');
-    if(!items.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:#8896B0;">No person edits logged yet</td></tr>';return;}
-    tbody.innerHTML=items.map(l=>`
+    const items = (Array.isArray(data) ? data : (data.results || []))
+      .filter(l => ['PERSON_EDIT','CREATE','VOTER_REGISTRATION'].includes(l.action_type))
+      .slice(0, 10);
+    const tbody = document.getElementById('edit-audit-tbody');
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#8896B0;">No person edits logged yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(l => `
       <tr>
         <td style="font-size:12px;white-space:nowrap;">${formatDateTime(l.timestamp)}</td>
-        <td style="font-size:12px;">${l.user?`User #${l.user}`:'System'}</td>
+        <td style="font-size:12px;">${l.user ? `User #${l.user}` : 'System'}</td>
         <td>${statusBadge(l.action_type)}</td>
         <td class="mono">#${String(l.entity_id).padStart(4,'0')}</td>
         <td style="font-size:11px;color:var(--text-muted);max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
             title="${(l.reason_code||'').replace(/"/g,'&quot;')}">${l.reason_code||'\u2014'}</td>
       </tr>`).join('');
-  }).catch(()=>{});
+  }).catch(() => {});
 }
 
 loadPersons();

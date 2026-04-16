@@ -24,28 +24,15 @@
     </div>
   </div>
 
-  <!-- STAT CARDS -->
   <div class="row g-3 mb-4">
     <div class="col-md-4">
-      <div class="stat-card">
-        <div class="stat-label"><i class="bi bi-person-check me-1"></i> Permanent Residents</div>
-        <div class="stat-value" id="stat-pr">0</div>
-        <div class="stat-sub">Active status records</div>
-      </div>
+      <div class="stat-card"><div class="stat-label"><i class="bi bi-person-check me-1"></i> Permanent Residents</div><div class="stat-value" id="stat-pr">0</div><div class="stat-sub">Active status records</div></div>
     </div>
     <div class="col-md-4">
-      <div class="stat-card gold">
-        <div class="stat-label"><i class="bi bi-passport me-1"></i> Visa Holders</div>
-        <div class="stat-value" id="stat-visa">0</div>
-        <div class="stat-sub">Active visa records</div>
-      </div>
+      <div class="stat-card gold"><div class="stat-label"><i class="bi bi-passport me-1"></i> Visa Holders</div><div class="stat-value" id="stat-visa">0</div><div class="stat-sub">Active visa records</div></div>
     </div>
     <div class="col-md-4">
-      <div class="stat-card green">
-        <div class="stat-label"><i class="bi bi-award me-1"></i> Other Lawful Status</div>
-        <div class="stat-value" id="stat-other">0</div>
-        <div class="stat-sub">Other status records</div>
-      </div>
+      <div class="stat-card green"><div class="stat-label"><i class="bi bi-award me-1"></i> Other Lawful Status</div><div class="stat-value" id="stat-other">0</div><div class="stat-sub">Other status records</div></div>
     </div>
   </div>
 
@@ -61,7 +48,8 @@
       <thead>
         <tr>
           <th>Record ID</th>
-          <th>Person ID</th>
+          <th style="width:52px;">Photo</th>
+          <th>Person</th>
           <th>Status Type</th>
           <th>Reference #</th>
           <th>Issuing Authority</th>
@@ -70,7 +58,7 @@
         </tr>
       </thead>
       <tbody id="immigration-tbody">
-        <tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">Loading records...</td></tr>
+        <tr><td colspan="8" style="text-align:center;padding:32px;color:#8896B0;">Loading records...</td></tr>
       </tbody>
     </table>
   </div>
@@ -87,7 +75,8 @@
       <thead>
         <tr>
           <th>Certificate #</th>
-          <th>Person ID</th>
+          <th style="width:52px;">Photo</th>
+          <th>Person</th>
           <th>Naturalization Date</th>
           <th>Office Location</th>
           <th>Verification</th>
@@ -95,7 +84,7 @@
         </tr>
       </thead>
       <tbody id="naturalization-tbody">
-        <tr><td colspan="6" style="text-align:center;padding:32px;color:#8896B0;">Loading records...</td></tr>
+        <tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">Loading records...</td></tr>
       </tbody>
     </table>
   </div>
@@ -110,32 +99,64 @@
 </footer>
 
 <script>
+const MEDIA_BASE = 'http://127.0.0.1:8000';
+let personMap = {};
+
+// Pre-load persons for photo thumbnails
+apiFetch('/persons/')
+  .then(d => { (Array.isArray(d) ? d : (d.results || [])).forEach(p => { personMap[p.id] = p; }); })
+  .catch(() => {});
+
+function buildPhotoUrl(path) {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  return `${MEDIA_BASE}/media/${path.replace(/^\//, '')}`;
+}
+
+function personPhotoCell(personId) {
+  const p = personMap[personId];
+  const THUMB = 'width:32px;height:40px;border-radius:3px;';
+  const placeholder = `<div style="${THUMB}background:var(--light-gray);border:1px solid var(--mid-gray);display:inline-flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:16px;"><i class="bi bi-person"></i></div>`;
+  if (!p) return placeholder;
+  const url = buildPhotoUrl(p.photo);
+  if (!url) return placeholder;
+  const name = `${p.first_name || ''} ${p.last_name || ''}`.trim();
+  return `<img src="${url}" alt="${name}" title="${name}"
+    style="${THUMB}max-width:32px;max-height:40px;object-fit:cover;border:1px solid var(--cobalt);display:block;"
+    onerror="this.style.display='none';" />`;
+}
+
 // Load immigration status records
 apiFetch('/immigration-status/').then(data => {
   const items = Array.isArray(data) ? data : (data.results || []);
   document.getElementById('total-count').textContent = items.length;
-  document.getElementById('stat-pr').textContent   = items.filter(i => i.status_type === 'PERMANENT_RESIDENT').length;
+  document.getElementById('stat-pr').textContent    = items.filter(i => i.status_type === 'PERMANENT_RESIDENT').length;
   document.getElementById('stat-visa').textContent  = items.filter(i => i.status_type === 'VISA_HOLDER').length;
   document.getElementById('stat-other').textContent = items.filter(i => i.status_type === 'OTHER_LAWFUL_STATUS').length;
 
   const tbody = document.getElementById('immigration-tbody');
   if (!items.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">No immigration records found</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:#8896B0;">No immigration records found</td></tr>';
     return;
   }
-  tbody.innerHTML = items.map(r => `
-    <tr>
+  tbody.innerHTML = items.map(r => {
+    const p = personMap[r.person];
+    const name = p ? `${p.first_name} ${p.last_name || ''}`.trim() : `Person #${String(r.person).padStart(4,'0')}`;
+    return `<tr>
       <td class="mono">#${String(r.id).padStart(4,'0')}</td>
-      <td class="mono">#${String(r.person).padStart(4,'0')}</td>
+      <td style="text-align:center;">${personPhotoCell(r.person)}</td>
+      <td>${name}</td>
       <td>${statusBadge(r.status_type)}</td>
       <td class="mono">${r.reference_number}</td>
       <td>${r.issuing_authority}</td>
       <td>${formatDate(r.status_start_date)}</td>
       <td>${r.status_end_date ? formatDate(r.status_end_date) : '<span style="color:var(--success);font-weight:600;">Ongoing</span>'}</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }).catch(() => {
   document.getElementById('total-count').textContent = '0';
-  document.getElementById('immigration-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
+  document.getElementById('immigration-tbody').innerHTML =
+    '<tr><td colspan="8" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
 });
 
 // Load naturalization records
@@ -143,20 +164,25 @@ apiFetch('/naturalization/').then(data => {
   const items = Array.isArray(data) ? data : (data.results || []);
   const tbody = document.getElementById('naturalization-tbody');
   if (!items.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#8896B0;">No naturalization records found</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;">No naturalization records found</td></tr>';
     return;
   }
-  tbody.innerHTML = items.map(r => `
-    <tr>
+  tbody.innerHTML = items.map(r => {
+    const p = personMap[r.person];
+    const name = p ? `${p.first_name} ${p.last_name || ''}`.trim() : `Person #${String(r.person).padStart(4,'0')}`;
+    return `<tr>
       <td class="mono">${r.certificate_number}</td>
-      <td class="mono">#${String(r.person).padStart(4,'0')}</td>
+      <td style="text-align:center;">${personPhotoCell(r.person)}</td>
+      <td>${name}</td>
       <td>${formatDate(r.naturalization_date)}</td>
       <td>${r.office_location}</td>
       <td>${statusBadge(r.verification_status)}</td>
       <td>${formatDate(r.created_at)}</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }).catch(() => {
-  document.getElementById('naturalization-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
+  document.getElementById('naturalization-tbody').innerHTML =
+    '<tr><td colspan="7" style="text-align:center;padding:32px;color:#8896B0;"><i class="bi bi-wifi-off me-2"></i>Backend offline</td></tr>';
 });
 </script>
 </body>
