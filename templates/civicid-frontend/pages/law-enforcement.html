@@ -181,7 +181,9 @@ function photoThumb(person, name) {
   if (!person) return `<i class="bi bi-person-circle" style="font-size:28px;color:var(--mid-gray);"></i>`;
   const url = buildPhotoUrl(person.photo);
   if (!url)   return `<i class="bi bi-person-circle" style="font-size:28px;color:var(--mid-gray);"></i>`;
+  // Inline style enforces 32x40 regardless of whether styles.css is cached
   return `<img class="history-thumb" src="${url}" alt="${escapeHtml(name)}"
+    style="width:32px;height:40px;max-width:32px;max-height:40px;object-fit:cover;border:1px solid #C5CBD8;border-radius:2px;vertical-align:middle;display:block;"
     onerror="this.outerHTML='<i class=\'bi bi-person-circle\' style=\'font-size:28px;color:var(--mid-gray);\'></i>'" />`;
 }
 
