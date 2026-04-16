@@ -8,7 +8,7 @@
 
 CivicID is a Django and Django REST Framework backend that models a multi-agency identity and civic management platform. It supports structured interaction across all major civic identity domains — from birth registration to death records, marriage certificates, Social Security, Selective Service, voter registration, and passport issuance.
 
-The platform enforces strict role-based access control, JWT authentication, privacy-aware data design, and a permanent, tamper-evident audit trail.
+The platform enforces strict role-based access control, JWT authentication, privacy-aware data design, a permanent tamper-evident audit trail, and person photo management across all modules.
 
 ---
 
@@ -20,6 +20,7 @@ The platform enforces strict role-based access control, JWT authentication, priv
 - Track every sensitive action through an immutable audit log
 - Support full civic lifecycle: birth → identity → civic participation → death
 - Simulate real-world multi-agency backend architecture
+- Display person photos across all relevant modules for visual identity confirmation
 
 ---
 
@@ -57,7 +58,7 @@ The platform enforces strict role-based access control, JWT authentication, priv
 
 ## Authentication
 
-JWT is used for all protected API access.
+JWT is used for all protected API access. Tokens are sent via `Authorization: Bearer <token>` and fall back to Django session authentication when the JWT is expired. The `apiFetch()` utility in `civic.js` handles both automatically — all API calls must use `apiFetch()`, never raw `fetch()`.
 
 ### Obtain token
 `POST /api/token/`
@@ -65,10 +66,9 @@ JWT is used for all protected API access.
 ### Refresh token
 `POST /api/token/refresh/`
 
-All protected routes require:
-```
-Authorization: Bearer <access_token>
-```
+Token lifetimes:
+- Access token: **8 hours**
+- Refresh token: **1 day**
 
 ---
 
@@ -111,10 +111,29 @@ Authorization: Bearer <access_token>
 - ID applications and issued credentials
 - Passport issuance with days-remaining tracking
 
+### Person Photos
+- `Person.photo` stores the current profile photo (`upload_to='person_photos/'`)
+- `PersonPhoto` model stores full photo history (`upload_to='person_photos/history/'`)
+- Photos are uploaded via `/api/person-photos/` or the Django Admin panel
+- Photos display across all modules at a **maximum size of 300×300px**:
+  - **Law Enforcement** — large ID card–style frame (300×300) in the result panel; 32×40 thumbnail in lookup history
+  - **Persons Registry** — 36×45 thumbnail left of the record ID number
+  - **Death Records** — 32×40 thumbnail between Certificate # and Person name
+  - **Social Security** — 32×40 thumbnail before the masked SSN column
+  - **Selective Service** — 32×40 thumbnail before the Registration # column
+- All photo sizes are enforced via inline styles on the injected `<img>` elements, ensuring correct display regardless of browser CSS cache state
+
 ### Vital Events
 - **Death Records** — filing automatically suspends voter registration, voter ID, passport, and selective service via Django signals
 - **Marriage Certificates** — name changes applied automatically to Person records; maiden name preserved; audit logged
 - **Person Edits** — every PATCH to a Person record diffs before/after state, requires a typed reason, and writes a permanent audit entry with officer identity and timestamp
+
+### Auto ID Application on Registration
+When a new Person record is created (via the API, Django Admin, or any other path), a Django signal fires automatically:
+- If the person is **16 years of age or older**, a `FIRST_TIME_ID` application is created with status `DRAFT`
+- A DMV officer must review and approve it before an ID is physically issued
+- Implemented in `apps/persons/signals.py` using `@receiver(post_save, sender=Person)`
+- Signal uses the **model class directly** (not the string form) for reliability
 
 ### Social Security
 - OneToOne SSN assignment per person
@@ -135,9 +154,10 @@ Authorization: Bearer <access_token>
 
 ### Law Enforcement Verification
 - Reason required before any data is returned
-- Only 5 minimum-necessary fields returned (name, DOB, citizenship)
+- Returns minimum-necessary fields: name, DOB, citizenship status, and photo (if on file)
 - Every lookup automatically logged to audit trail
 - Officers can only view their own history
+- `MinimalPersonSerializer` deliberately excludes SSN, address, maiden name, and all other sensitive fields
 
 ### Audit & Compliance
 - All sensitive actions across every module write to `AuditLog`
@@ -157,20 +177,51 @@ Authorization: Bearer <access_token>
 |------|-------|-------------|
 | `/` | All | Agency selection + secure login |
 | `/pages/dashboard/` | All | System-wide stats and recent activity |
-| `/pages/persons/` | All (edit: REGISTRAR, DMV, SUPER_ADMIN) | Identity registry with edit modal + audit trail |
+| `/pages/persons/` | All (edit: REGISTRAR, DMV, SUPER_ADMIN) | Identity registry with photo thumbnails, edit modal, and audit trail |
 | `/pages/birth-records/` | REGISTRAR, SUPER_ADMIN | New record modal: existing person or create new inline; gender field |
-| `/pages/death-records/` | REGISTRAR, LAW_ENFORCEMENT, SUPER_ADMIN | File death record; cascades fire automatically |
+| `/pages/death-records/` | REGISTRAR, LAW_ENFORCEMENT, SUPER_ADMIN | File death record with person photo; cascades fire automatically |
 | `/pages/marriage/` | REGISTRAR, SUPER_ADMIN | Register marriage; name changes auto-applied |
-| `/pages/social-security/` | SSA, REGISTRAR, SUPER_ADMIN | Issue SSN; masked display |
-| `/pages/selective-service/` | REGISTRAR, SUPER_ADMIN | Registry + manual registration with age/gender warnings |
+| `/pages/social-security/` | SSA, REGISTRAR, SUPER_ADMIN | Issue SSN with person photo; masked display |
+| `/pages/selective-service/` | REGISTRAR, SUPER_ADMIN | Registry with person photo + manual registration |
 | `/pages/id-applications/` | DMV, SUPER_ADMIN | ID application management |
 | `/pages/issued-ids/` | DMV, SUPER_ADMIN | Credential status and expiration tracking |
 | `/pages/immigration/` | IMMIGRATION, SUPER_ADMIN | Immigration status + naturalization |
 | `/pages/voter-registration/` | ELECTIONS, SUPER_ADMIN | Eligibility check, registration, felony flag, rights restoration |
 | `/pages/passport/` | STATE_DEPT, SUPER_ADMIN | Passport issuance and status management |
-| `/pages/law-enforcement/` | LAW_ENFORCEMENT | Identity lookup portal |
+| `/pages/law-enforcement/` | LAW_ENFORCEMENT | Identity lookup portal with 300×300 photo and history thumbnails |
 | `/pages/audit/` | AUDITOR, SUPER_ADMIN | Full audit log with action filtering |
 | `/pages/administration/` | SUPER_ADMIN | System overview, module links, API reference |
+
+---
+
+## Frontend Architecture
+
+### Shared Utilities (`civic.js`)
+- `apiFetch(path, options)` — authenticated API calls with JWT + CSRF + session fallback. **All API calls must use this function.**
+- `injectHeader(activePage)` — renders the header, nav, and clock
+- `injectEditModal()` — injects the shared person edit modal
+- `statusBadge(status)` — returns a formatted status badge HTML string
+- `formatDate(dateStr)` / `formatDateTime(dateStr)` — date formatting helpers
+
+### Shared Styles (`styles.css`)
+All component styles live in one shared stylesheet. No page should have an inline `<style>` block. Key component classes:
+
+| Class | Description |
+|-------|-------------|
+| `.id-photo-frame` | 300×300 ID card photo frame (Law Enforcement result panel) |
+| `.id-photo-placeholder` | No-photo icon inside `.id-photo-frame` |
+| `.history-thumb` | 32×40 thumbnail for table rows |
+| `.person-thumb` | 36×45 thumbnail for persons registry |
+| `.id-cell` | Flex wrapper: photo + ID number side-by-side |
+| `.result-panel` / `.result-header` | LE result panel structure |
+| `.verify-form` / `.required-tag` | LE lookup form |
+| `.eligibility-result` | Voter eligibility result box |
+| `.restore-form` / `.felony-form` | Voter rights action panels |
+| `.tab-btn` / `.tab-btn.active` | Tab filter buttons (gold underline when active) |
+| `.action-header-felony` / `.action-header-restore` | Colored action header backgrounds |
+
+### Photo Rendering Pattern
+Photos are injected dynamically via JavaScript. All `<img>` tags use explicit inline `width`, `height`, `max-width`, `max-height`, and `object-fit:cover` to enforce correct sizing regardless of CSS cache state. The `onerror` handler uses `this.style.display='none'` only — never `this.outerHTML=...` — to avoid artifact text appearing in the DOM.
 
 ---
 
@@ -209,6 +260,11 @@ cp templates/civicid-frontend/media/civic_id_2026.png media/civic_id_2026.png
 python manage.py createsuperuser
 ```
 
+### Upload a person photo
+Photos must currently be uploaded via:
+1. **Django Admin** — `/admin/` → Person Photos → Add
+2. **API directly** — `POST /api/person-photos/` with `multipart/form-data`
+
 ---
 
 ## Project Status
@@ -216,7 +272,9 @@ python manage.py createsuperuser
 ### Completed
 - Core identity models with full migration history
 - JWT authentication + RBAC (9 roles)
-- Law enforcement verification (privacy-first, audit-logged)
+- JWT token lifetime: 8hr access / 1 day refresh
+- `apiFetch()` utility with JWT + CSRF + session auth fallback (fixes 403 on token expiry)
+- Law enforcement verification (privacy-first, audit-logged, photo included)
 - Voter registration module (eligibility gates, felony tracking, rights restoration)
 - Passport module with days-remaining calculation
 - Birth records with inline person creation
@@ -226,6 +284,10 @@ python manage.py createsuperuser
 - Selective Service registry (federal law compliance)
 - Person edit audit logging (field-level diff, officer, timestamp, reason)
 - Celery + Redis automated civic tasks (age 18 registration, age 26 deregistration)
+- **Person photos** displayed across all 5 modules (LE, Persons, Death Records, Social Security, Selective Service)
+- **Photo size capped at 300×300px** with inline style enforcement on all dynamically injected images
+- **Auto ID application** on person registration (16+ years → DRAFT `FIRST_TIME_ID` via Django signal)
+- Full CSS refactoring — all styles consolidated into `styles.css`, no inline `<style>` blocks in any page
 - Full frontend with 16 pages, role-gated navigation
 - SSA agency card on login page
 
@@ -235,7 +297,7 @@ python manage.py createsuperuser
 - Java / Spring Boot version
 - Full permission hardening (DRF permission classes per role per endpoint)
 - Person profile page with linked records view
-- Photo upload UI
+- Photo upload UI (currently requires Django Admin or direct API call)
 
 ---
 
@@ -251,6 +313,7 @@ CivicID demonstrates:
 - Signal-driven cascade automation
 - Scheduled task automation with Celery and Redis
 - Real-world multi-domain data relationships
+- Photo management across a multi-module system with consistent display constraints
 
 ---
 
