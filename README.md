@@ -319,7 +319,7 @@ CivicID demonstrates:
 
 ## Author
 
-**Veries Seals III**
+** Veries Seals III**
 B.S. Computer Science (Software Engineering)
 Colorado Technical University
 
